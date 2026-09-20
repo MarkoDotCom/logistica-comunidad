@@ -8,7 +8,7 @@ Solución de gestión logística para una comunidad de vivienda. Misma estructur
 | `services/api/`  | API                                      | NestJS + Prisma           |
 | `database/`      | Esquema SQL, seed y diagrama ER          | PostgreSQL 16             |
 | `landing/`       | Landing pública                          | Vite                      |
-| `docs/`          | Documentación                            |                           |
+| `docs/`          | Guías para portar: `design-rules.md`, `modales-y-wizards.md`, `identidad-y-permisos.md` | |
 
 ```bash
 cp .env.example .env       # incluye JWT_SECRET; cámbialo fuera de desarrollo

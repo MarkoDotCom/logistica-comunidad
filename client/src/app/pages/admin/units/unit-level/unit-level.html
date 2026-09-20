@@ -1,0 +1,101 @@
+<div class="unit-level__toolbar">
+  <label class="ui-checkbox">
+    <input type="checkbox" [checked]="showDeleted()" (change)="onShowDeletedChange($event)" />
+    Mostrar eliminadas
+  </label>
+  <ui-button (clicked)="newOpen.set(true)">+ {{ newLabel() }}</ui-button>
+</div>
+
+<ui-dialog [open]="newOpen()" (openChange)="$event || onDialogClose('new')">
+  @if (newOpen()) {
+    <app-new-unit [parent]="parent()" (closed)="onDialogClose('new')" />
+  }
+</ui-dialog>
+
+<ui-dialog [open]="editing() !== null" (openChange)="$event || onDialogClose('edit')">
+  @if (editing(); as unit) {
+    <app-edit-unit [unit]="unit" (closed)="onDialogClose('edit')" />
+  }
+</ui-dialog>
+
+<ui-dialog [open]="restoring() !== null" (openChange)="$event || onDialogClose('restore')">
+  @if (restoring(); as node) {
+    <app-restore-unit [node]="node" (closed)="onDialogClose('restore')" />
+  }
+</ui-dialog>
+
+<ui-dialog [open]="removing() !== null" (openChange)="$event || removing.set(null)">
+  @if (removing(); as unit) {
+    <ui-card heading="Eliminar unidad" [actions]="removeActions()" (action)="onRemoveAction($event)">
+      <p>Vas a eliminar <strong>{{ unitLabel(unit) }}</strong> ({{ kindLabels[unit.kind] }}) y todo lo que cuelga de ella.</p>
+      <p class="ui-muted">Es un borrado lógico: la unidad y sus contratos se conservan y puedes restaurarla desde "Mostrar eliminadas".</p>
+    </ui-card>
+  }
+</ui-dialog>
+
+@if (actionError(); as error) {
+  <p class="ui-form__error">{{ error }}</p>
+}
+
+@if (failed()) {
+  <p class="ui-form__error">No se pudieron cargar las unidades.</p>
+} @else if (units(); as units) {
+  @if (units.length === 0) {
+    <p class="ui-muted">Todavía no hay {{ plurals[childKind()].toLowerCase() }} aquí. Crea la primera con el botón de arriba.</p>
+  } @else {
+    <div class="ui-table-wrap">
+      <table class="ui-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            @if (childrenHeader(); as header) {
+              <th>{{ header }}</th>
+            }
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (unit of units; track unit.id) {
+            <tr [class.unit-level__row--deleted]="unit.deletedAt">
+              <td><ui-tag>{{ kindLabels[unit.kind] }}</ui-tag></td>
+              <td>
+                @if (route(unit); as link) {
+                  <a class="unit-level__link" [routerLink]="link">{{ unit.code }}</a>
+                } @else {
+                  {{ unit.code }}
+                }
+              </td>
+              <td>{{ unit.name || '—' }}</td>
+              @if (childrenHeader()) {
+                <td>{{ unit.childrenCount }}</td>
+              }
+              <td>
+                @if (unit.deletedAt) {
+                  <span class="ui-muted">Eliminada</span>
+                } @else {
+                  <ui-tag>Viva</ui-tag>
+                }
+              </td>
+              <td class="ui-table__actions">
+                @if (unit.deletedAt) {
+                  <ui-button variant="secondary" (clicked)="openRestore(unit)">Restaurar</ui-button>
+                } @else {
+                  @if (route(unit); as link) {
+                    <a class="unit-level__open" [routerLink]="link">Abrir</a>
+                  }
+                  <ui-button variant="secondary" (clicked)="editing.set(unit)">Modificar</ui-button>
+                  <ui-button variant="ghost" (clicked)="removing.set(unit)">Eliminar</ui-button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+} @else {
+  <p class="ui-muted">Cargando…</p>
+}

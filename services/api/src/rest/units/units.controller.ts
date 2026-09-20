@@ -1,22 +1,31 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseBoolPipe, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
-import type { UnitDto } from '../../database/tables/unit.table.js';
+import type { UnitDto, UnitSummary } from '../../database/tables/unit.table.js';
 import { CreateUnitDto } from './dto/create-unit.dto.js';
 import { UpdateUnitDto } from './dto/update-unit.dto.js';
-import { UnitsService, type UnitNode } from './units.service.js';
+import { UnitsService, type UnitDetail, type UnitNode } from './units.service.js';
 
 @Controller('units')
 export class UnitsController {
   constructor(private readonly units: UnitsService) {}
 
-  /** Navegación nivel a nivel: sin ?parentId= devuelve las comunidades; con él, los hijos directos. Solo vivas. */
+  /** Navegación nivel a nivel: sin ?parentId= devuelve las comunidades; con él, los hijos directos. Solo vivas salvo ?includeDeleted=true. */
   @Get()
-  findChildren(@Query('parentId', new ParseUUIDPipe({ optional: true })) parentId?: string): Promise<UnitDto[]> {
-    return this.units.findChildren(parentId);
+  findChildren(
+    @Query('parentId', new ParseUUIDPipe({ optional: true })) parentId?: string,
+    @Query('includeDeleted', new ParseBoolPipe({ optional: true })) includeDeleted?: boolean,
+  ): Promise<UnitSummary[]> {
+    return this.units.findChildren(parentId, includeDeleted ?? false);
   }
 
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UnitDto> {
     return this.units.findOne(id);
+  }
+
+  /** Detalle completo: la unidad, sus ancestros (ruta), sus hijos vivos y sus contratos con la persona de cada uno. */
+  @Get(':id/detail')
+  findDetail(@Param('id', ParseUUIDPipe) id: string): Promise<UnitDetail> {
+    return this.units.findDetail(id);
   }
 
   /** La unidad con todo su subárbol anidado. Con ?includeDeleted=true incluye las eliminadas. */

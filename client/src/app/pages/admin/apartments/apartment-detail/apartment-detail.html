@@ -1,0 +1,53 @@
+<main class="page">
+  @if (failed()) {
+    <p class="ui-form__error">No se pudo cargar el departamento.</p>
+  } @else if (unit(); as unit) {
+    <ui-breadcrumb [items]="breadcrumb(unit)" />
+    <ui-section-header [heading]="unitLabel(unit)" [subtitle]="kindLabels[unit.kind] + ' · código ' + unit.code" />
+
+    <dl class="detail__facts">
+      <dt>Tipo</dt>
+      <dd><ui-tag>{{ kindLabels[unit.kind] }}</ui-tag></dd>
+      <dt>Código</dt>
+      <dd>{{ unit.code }}</dd>
+      <dt>Nombre</dt>
+      <dd>{{ unit.name || '—' }}</dd>
+      <dt>Propietarios</dt>
+      <dd>
+        @if (owners().length) {
+          @for (c of owners(); track c.id; let last = $last) {
+            {{ c.user.fullName }}{{ last ? '' : ', ' }}
+          }
+        } @else {
+          <span class="ui-muted">Sin propietario vigente</span>
+        }
+      </dd>
+      <dt>Arrendatarios</dt>
+      <dd>
+        @if (tenants().length) {
+          @for (c of tenants(); track c.id; let last = $last) {
+            {{ c.user.fullName }} <span class="ui-muted">(hasta {{ c.endsAt ?? 'sin término' }})</span>{{ last ? '' : ', ' }}
+          }
+        } @else {
+          <span class="ui-muted">Sin arriendo vigente</span>
+        }
+      </dd>
+      @if (unit.deletedAt) {
+        <dt>Estado</dt>
+        <dd>Eliminada el {{ unit.deletedAt | date: 'medium' }}</dd>
+      }
+    </dl>
+
+    <section class="detail__section">
+      <h3 class="detail__title">Cuentas de cobro</h3>
+      <app-unit-level [parent]="unit" childKind="account" />
+    </section>
+
+    <section class="detail__section">
+      <h3 class="detail__title">Contratos</h3>
+      <app-unit-contracts [contracts]="unit.contracts" />
+    </section>
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+</main>

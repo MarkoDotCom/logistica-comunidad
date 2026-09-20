@@ -1,0 +1,20 @@
+<main class="page">
+  @if (failed()) {
+    <p class="ui-form__error">No se pudo cargar la comunidad.</p>
+  } @else if (unit(); as unit) {
+    <ui-breadcrumb [items]="breadcrumb(unit)" />
+    <ui-section-header [heading]="unitLabel(unit)" [subtitle]="kindLabels[unit.kind] + ' · código ' + unit.code" />
+
+    <section class="detail__section">
+      <h3 class="detail__title">Edificios</h3>
+      <app-unit-level [parent]="unit" childKind="building" [linkFor]="link" />
+    </section>
+
+    <section class="detail__section">
+      <h3 class="detail__title">Contratos sobre la comunidad</h3>
+      <app-unit-contracts [contracts]="unit.contracts" />
+    </section>
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+</main>

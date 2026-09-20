@@ -46,8 +46,9 @@ Toda respuesta sale con el mismo envoltorio. El cliente puede enviar `x-request-
 | GET    | `/users/:id`           | Usuario con sus contratos y las unidades de cada uno |
 | POST   | `/users`               | Crea usuario (`email`, `fullName`, `phone?`, `externalAuthId?`) |
 | PATCH  | `/users/:id`           | Modifica lo que venga (`email`, `fullName`, `phone`, `externalAuthId`, `isActive`) |
-| GET    | `/units?parentId=`     | Sin `parentId`, las comunidades raíz vivas; con él, los hijos directos vivos |
+| GET    | `/units?parentId=`     | Sin `parentId`, las comunidades raíz; con él, los hijos directos. Cada fila trae `childrenCount` (hijos vivos). `?includeDeleted=true` incluye eliminadas |
 | GET    | `/units/:id`           | Una unidad |
+| GET    | `/units/:id/detail`    | Detalle completo: la unidad, `ancestors` (de la raíz al padre), `children` vivos con `childrenCount` y `contracts` con la persona de cada uno |
 | GET    | `/units/:id/tree`      | La unidad con su subárbol anidado (`children`); `?includeDeleted=true` incluye las eliminadas |
 | POST   | `/units`               | Crea unidad (`kind`, `code`, `parentId?`, `name?`) |
 | PATCH  | `/units/:id`           | Modifica lo que venga; cambiar `parentId` mueve la unidad con su subárbol |

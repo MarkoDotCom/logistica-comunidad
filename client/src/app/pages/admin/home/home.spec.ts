@@ -36,7 +36,8 @@ describe('Home', () => {
     expect(metrics[2].textContent).toContain('Departamentos');
     expect(metrics[4].textContent).toContain('de 5 en total');
     expect(metrics[5].textContent).toContain('1 vencen en 30 días');
-    expect(el.querySelectorAll('ui-card')).toHaveLength(2);
+    expect(el.querySelectorAll('ui-card')).toHaveLength(3);
+    expect(metrics[0].getAttribute('href')).toBe('/admin/comunidades');
   });
 
   it('should show an error when the summary fails', async () => {

@@ -1,0 +1,13 @@
+<nav class="ui-breadcrumb" aria-label="Ruta">
+  <ol class="ui-breadcrumb__list">
+    @for (item of items(); track $index; let last = $last) {
+      <li class="ui-breadcrumb__item">
+        @if (item.link && !last) {
+          <a class="ui-breadcrumb__link" [routerLink]="item.link">{{ item.label }}</a>
+        } @else {
+          <span class="ui-breadcrumb__current" [attr.aria-current]="last ? 'page' : null">{{ item.label }}</span>
+        }
+      </li>
+    }
+  </ol>
+</nav>

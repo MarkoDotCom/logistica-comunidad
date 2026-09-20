@@ -29,7 +29,7 @@ export class Home {
     const s = this.summary();
     if (!s) return [];
     return [
-      { label: 'Comunidades', value: s.units.community, link: '/admin/unidades' },
+      { label: 'Comunidades', value: s.units.community, link: '/admin/comunidades' },
       { label: 'Edificios', value: s.units.building, link: '/admin/unidades' },
       { label: 'Departamentos', value: s.units.apartment, link: '/admin/unidades' },
       { label: 'Cuentas', value: s.units.account, link: '/admin/unidades' },

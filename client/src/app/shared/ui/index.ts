@@ -1,3 +1,4 @@
+export { Breadcrumb, type BreadcrumbItem } from './breadcrumb/breadcrumb';
 export { Button } from './button/button';
 export { Card, type CardAction } from './card/card';
 export { Dialog } from './dialog/dialog';

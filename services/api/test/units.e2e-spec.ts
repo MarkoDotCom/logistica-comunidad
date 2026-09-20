@@ -36,11 +36,36 @@ describe('Unidades (e2e)', () => {
     expect(children.body.data.map((u: { code: string }) => u.code)).toEqual(['A', 'B']);
   });
 
+  it('lists children with their alive children count, optionally including deleted ones', async () => {
+    // La base del compose puede tener datos creados a mano además del seed: se comprueba lo mínimo
+    const res = await request(app.getHttpServer()).get(`/units?parentId=${TORRE_A}`).expect(200);
+    const a101 = res.body.data.find((u: { code: string }) => u.code === '101');
+    expect(a101.childrenCount).toBeGreaterThanOrEqual(1);
+    expect(res.body.data.every((u: { deletedAt: string | null }) => u.deletedAt === null)).toBe(true);
+    const all = await request(app.getHttpServer()).get(`/units?parentId=${TORRE_A}&includeDeleted=true`).expect(200);
+    expect(all.body.data.length).toBeGreaterThanOrEqual(res.body.data.length);
+  });
+
+  it('returns the full detail of an apartment: path, accounts and contracts with people', async () => {
+    const res = await request(app.getHttpServer()).get('/units/30000000-0000-4000-8000-000000000001/detail').expect(200); // A-101
+    const d = res.body.data;
+    expect(d).toMatchObject({ kind: 'apartment', code: '101' });
+    expect(d.ancestors.map((u: { code: string }) => u.code)).toEqual(['los-alamos', 'A']);
+    expect(d.children).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'account', code: 'GC', childrenCount: 0 })]));
+    expect(d.contracts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'lease', startsAt: '2026-01-01', endsAt: '2026-12-31', user: expect.objectContaining({ fullName: 'Carla Muñoz' }) }),
+      expect.objectContaining({ type: 'lease', startsAt: '2025-01-01' }),
+      expect.objectContaining({ type: 'ownership', startsAt: '2019-06-15', endsAt: null, user: expect.objectContaining({ fullName: 'Ana Rojas', email: 'ana.rojas@example.com' }) }),
+    ]));
+    expect(d.contracts[0].startsAt >= d.contracts.at(-1).startsAt).toBe(true); // del más reciente al más antiguo
+    await request(app.getHttpServer()).get('/units/00000000-0000-4000-8000-000000000000/detail').expect(404);
+  });
+
   it('returns the nested subtree of a unit', async () => {
     const res = await request(app.getHttpServer()).get(`/units/${TORRE_A}/tree`).expect(200);
     expect(res.body.data).toMatchObject({ id: TORRE_A, code: 'A' });
-    expect(res.body.data.children.map((u: { code: string }) => u.code)).toEqual(['101', '102']);
-    expect(res.body.data.children[0].children).toEqual([expect.objectContaining({ kind: 'account', code: 'GC', children: [] })]);
+    expect(res.body.data.children.map((u: { code: string }) => u.code)).toEqual(expect.arrayContaining(['101', '102']));
+    expect(res.body.data.children[0].children).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'account', code: 'GC', children: [] })]));
     await request(app.getHttpServer()).get('/units/00000000-0000-4000-8000-000000000000/tree').expect(404);
   });
 

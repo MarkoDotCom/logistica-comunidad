@@ -73,6 +73,7 @@ Inventario:
 | `ui-card` | `heading`, `content`, `actions: CardAction[]`, `(action)`; wizard: `steps`, `[(step)]`, `canAdvance`, `(finish)` | Con `steps` muestra `ui-stepper` y botones Anterior / Siguiente / Finalizar |
 | `ui-stepper` | `steps: string[]`, `step: number` | Pasos anteriores con ✓, activo con `aria-current="step"` |
 | `ui-dialog` | `[(open)]` | Modal sobre `<dialog>` nativo; el contenido aporta su superficie (un `ui-card`) |
+| `ui-breadcrumb` | `items: BreadcrumbItem[]` (`label`, `link?`) | Ruta de navegación; el último ítem va sin enlace y con `aria-current="page"` |
 | `ui-section-header` | `heading`, `subtitle` | Título de página o sección |
 | `ui-theme-toggle` | — | Ver tokens |
 
@@ -96,9 +97,10 @@ Layout y utilidades:
 
 ## 6. Patrones de página
 
-- **Dashboard**: todo vive bajo `pages/admin/`, con el layout `Admin` (header con Inicio · Usuarios · Unidades y `ui-theme-toggle`). Cada página empieza con `<main class="page">` y un `ui-section-header`.
+- **Dashboard**: todo vive bajo `pages/admin/`, con el layout `Admin` (header con Inicio · Comunidades · Árbol · Usuarios y `ui-theme-toggle`). Cada página empieza con `<main class="page">` y un `ui-section-header`; las de detalle llevan antes un `ui-breadcrumb` (`core/unit-routes.ts` arma la ruta) y sus secciones usan `pages/admin/detail.scss`.
+- **Navegación por niveles**: Comunidades → comunidad (edificios) → edificio (departamentos) → departamento (detalle). Cada nivel es un `app-unit-level` (tabla con alta, edición, eliminación y restauración) parametrizado con el padre, el tipo hijo y la ruta de cada fila. Mover unidades solo se ofrece en el Árbol.
 - **Estados**: toda carga de datos muestra, en este orden, error (`.ui-form__error`), vacío (`.ui-muted` con la acción siguiente) o "Cargando…". Los datos se guardan en un `signal<T | null>` y un `signal(false)` para el fallo.
-- **Listas**: tabla (`.ui-table`) cuando las filas comparten columnas y tienen acciones por fila (usuarios). Árbol (`app-unit-node`, recursivo) para las unidades: cada fila con tag de tipo, nombre, acciones "+ Hijo" y "Modificar", y un toggle para contraer.
+- **Listas**: tabla (`.ui-table`) cuando las filas comparten columnas y tienen acciones por fila (usuarios, niveles de unidades, contratos de una unidad). Árbol (`app-unit-node`, recursivo) para las unidades: cada fila con tag de tipo, nombre, acciones "+ Hijo" y "Modificar", y un toggle para contraer.
 - **Eliminar**: siempre lógico y con confirmación en un `ui-dialog` con `ui-card` de acciones (Eliminar / Cancelar) que dice qué se va (la unidad y cuántas cuelgan de ella). Las eliminadas se ven con la casilla "Mostrar eliminadas", atenuadas y tachadas, y solo ofrecen Restaurar, que abre su propio wizard (Presentación → Confirmar) indicando qué vuelve con la unidad y los requisitos. Los errores de la eliminación se muestran en un `.ui-form__error` sobre la lista; los de la restauración, dentro del wizard.
 - **Crear y modificar**: siempre en un `ui-dialog` con un `ui-card` en modo wizard de tres pasos: Presentación → Datos → Confirmar. Al terminar, el wizard se reemplaza por una tarjeta de resultado con el stepper completo y las acciones siguientes (Cerrar, Crear otro). Al cerrar el diálogo, la página recarga la lista. Los estilos de los wizards están en `pages/admin/wizard.scss`.
 - **Etiquetas**: los valores de enums de la API se traducen con `core/labels.ts` (`UNIT_KIND_LABELS`, `CONTRACT_TYPE_LABELS`). `unitLabel()` da "Torre A" si hay nombre o "Departamento 101" si no. Nunca se muestra el valor crudo.

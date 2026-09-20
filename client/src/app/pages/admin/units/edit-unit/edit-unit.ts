@@ -25,7 +25,7 @@ export class EditUnit implements OnInit {
   private readonly api = inject(UnitsApi);
 
   readonly unit = input.required<Unit>();
-  /** Unidades a las que se puede mover (misma comunidad, sin la propia ni sus descendientes). Vacío para una comunidad. */
+  /** Unidades a las que se puede mover (misma comunidad, sin la propia ni sus descendientes). Vacío = no se ofrece mover. */
   readonly moveOptions = input<MoveOption[]>([]);
   readonly closed = output<void>();
 

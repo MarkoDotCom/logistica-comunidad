@@ -99,3 +99,20 @@ describe('UnitsService: borrado lógico', () => {
     expect(restore).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('UnitsService: detalle', () => {
+  it('combines the unit with its ancestors, children and contracts', async () => {
+    const find = vi.fn().mockResolvedValue(apt101);
+    const ancestors = vi.fn().mockResolvedValue([community, towerA]);
+    const listChildren = vi.fn().mockResolvedValue([{ id: 'gc', parentId: 'a101', kind: 'account', code: 'GC', name: null, deletedAt: null, childrenCount: 0 }]);
+    const contracts = vi.fn().mockResolvedValue([{ id: 'k1', type: 'ownership', startsAt: '2019-06-15', endsAt: null, user: { id: 'u1', fullName: 'Ana', email: 'ana@example.com' } }]);
+    const service = await serviceWith({ find, ancestors, listChildren, contracts });
+
+    const detail = await service.findDetail('a101');
+    expect(detail).toMatchObject({ id: 'a101', ancestors: [community, towerA], children: [{ code: 'GC', childrenCount: 0 }], contracts: [{ type: 'ownership' }] });
+    expect(listChildren).toHaveBeenCalledWith('a101');
+
+    find.mockResolvedValueOnce(null);
+    await expect(service.findDetail('nope')).rejects.toThrow('Unidad no encontrada');
+  });
+});

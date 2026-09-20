@@ -11,11 +11,13 @@
           @case (0) {
             <p>Vas a modificar <strong>{{ unitLabel(unit()) }}</strong> ({{ kindLabels[unit().kind] }}).</p>
             <ol class="wizard__intro">
-              <li><strong>Datos:</strong> código y nombre@if (!isCommunity()) {, tipo y de qué unidad cuelga}.</li>
+              <li><strong>Datos:</strong> código y nombre@if (!isCommunity()) {, tipo@if (moveOptions().length) { y de qué unidad cuelga}}.</li>
               <li><strong>Confirmar:</strong> revisas los cambios y se guardan.</li>
             </ol>
-            @if (!isCommunity()) {
+            @if (!isCommunity() && moveOptions().length) {
               <p class="ui-muted">Si cambias de qué cuelga, se mueve con todo lo que tiene dentro.</p>
+            } @else if (!isCommunity()) {
+              <p class="ui-muted">Para moverla a otra unidad usa el Árbol.</p>
             }
           }
           @case (1) {
@@ -40,7 +42,7 @@
               <span class="ui-field__label">Nombre (opcional)</span>
               <input class="ui-input" type="text" formControlName="name" />
             </label>
-            @if (!isCommunity()) {
+            @if (!isCommunity() && moveOptions().length) {
               <label class="ui-field">
                 <span class="ui-field__label">Cuelga de</span>
                 <select class="ui-select" formControlName="parentId">
@@ -59,7 +61,7 @@
               <dd>{{ value().code }}</dd>
               <dt>Nombre</dt>
               <dd>{{ value().name || '—' }}</dd>
-              @if (!isCommunity()) {
+              @if (!isCommunity() && moveOptions().length) {
                 <dt>Cuelga de</dt>
                 <dd>{{ parentLabel() }}</dd>
               }

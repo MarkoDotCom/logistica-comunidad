@@ -1,0 +1,36 @@
+@if (contracts().length === 0) {
+  <p class="ui-muted">No hay contratos sobre esta unidad.</p>
+} @else {
+  <div class="ui-table-wrap">
+    <table class="ui-table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Persona</th>
+          <th>Email</th>
+          <th>Desde</th>
+          <th>Hasta</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (c of contracts(); track c.id) {
+          <tr>
+            <td><ui-tag>{{ typeLabels[c.type] }}</ui-tag></td>
+            <td>{{ c.user.fullName }}</td>
+            <td>{{ c.user.email }}</td>
+            <td>{{ c.startsAt }}</td>
+            <td>{{ c.endsAt ?? 'Sin término' }}</td>
+            <td>
+              @if (status(c) === 'current') {
+                <ui-tag>{{ statusLabels[status(c)] }}</ui-tag>
+              } @else {
+                <span class="ui-muted">{{ statusLabels[status(c)] }}</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

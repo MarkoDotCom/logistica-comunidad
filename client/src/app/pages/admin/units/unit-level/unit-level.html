@@ -24,12 +24,9 @@
   }
 </ui-dialog>
 
-<ui-dialog [open]="removing() !== null" (openChange)="$event || removing.set(null)">
-  @if (removing(); as unit) {
-    <ui-card heading="Eliminar unidad" [actions]="removeActions()" (action)="onRemoveAction($event)">
-      <p>Vas a eliminar <strong>{{ unitLabel(unit) }}</strong> ({{ kindLabels[unit.kind] }}) y todo lo que cuelga de ella.</p>
-      <p class="ui-muted">Es un borrado lógico: la unidad y sus contratos se conservan y puedes restaurarla desde "Mostrar eliminadas".</p>
-    </ui-card>
+<ui-dialog [open]="removing() !== null" (openChange)="$event || onDialogClose('remove')">
+  @if (removing(); as node) {
+    <app-remove-unit [node]="node" (closed)="onDialogClose('remove')" />
   }
 </ui-dialog>
 
@@ -87,7 +84,7 @@
                     <a class="unit-level__open" [routerLink]="link">Abrir</a>
                   }
                   <ui-button variant="secondary" (clicked)="editing.set(unit)">Modificar</ui-button>
-                  <ui-button variant="ghost" (clicked)="removing.set(unit)">Eliminar</ui-button>
+                  <ui-button variant="ghost" (clicked)="openRemove(unit)">Eliminar</ui-button>
                 }
               </td>
             </tr>

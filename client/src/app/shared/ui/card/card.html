@@ -20,9 +20,11 @@
       }
       @if (steps().length) {
         @if (step() > 0) {
-          <ui-button variant="secondary" (clicked)="prev()">Anterior</ui-button>
+          <ui-button class="ui-card__prev" variant="secondary" (clicked)="prev()">Anterior</ui-button>
         }
-        <ui-button [disabled]="!canAdvance()" (clicked)="next()">{{ isLastStep() ? 'Finalizar' : 'Siguiente' }}</ui-button>
+        <ui-button [variant]="isLastStep() ? finishVariant() : 'primary'" [disabled]="!canAdvance()" (clicked)="next()">
+          {{ isLastStep() ? 'Finalizar' : 'Siguiente' }}
+        </ui-button>
       }
     </div>
   }

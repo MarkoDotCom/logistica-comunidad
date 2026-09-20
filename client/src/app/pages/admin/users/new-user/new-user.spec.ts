@@ -49,7 +49,7 @@ describe('NewUser', () => {
     await fixture.whenStable();
 
     expect(el.textContent).toContain('Usuario creado');
-    buttons()[0].click();
+    buttons().at(-1)!.click(); // Cerrar es la última (primaria)
     expect(closed).toBe(true);
   });
 

@@ -1,5 +1,5 @@
 <main class="page">
-  <ui-section-header heading="Unidades" subtitle="Comunidades, edificios, departamentos y cuentas" />
+  <ui-section-header heading="Árbol de unidades" subtitle="Vista global: aquí se mueven unidades de rama y se restauran las eliminadas" />
 
   <div class="unit-tree__toolbar">
     <label class="ui-checkbox">
@@ -9,41 +9,29 @@
     <ui-button (clicked)="newParent.set(null)">+ Nueva comunidad</ui-button>
   </div>
 
-  <ui-dialog [open]="newParent() !== undefined" (openChange)="onNewOpenChange($event)">
+  <ui-dialog [open]="newParent() !== undefined" (openChange)="$event || onDialogClose('new')">
     @if (newParent() !== undefined) {
-      <app-new-unit [parent]="newParent() ?? null" (closed)="onNewOpenChange(false)" />
+      <app-new-unit [parent]="newParent() ?? null" (closed)="onDialogClose('new')" />
     }
   </ui-dialog>
 
-  <ui-dialog [open]="editing() !== null" (openChange)="onEditOpenChange($event)">
+  <ui-dialog [open]="editing() !== null" (openChange)="$event || onDialogClose('edit')">
     @if (editing(); as unit) {
-      <app-edit-unit [unit]="unit" [moveOptions]="moveOptions()" [parentKind]="editingParentKind()" [childKinds]="editingChildKinds()" (closed)="onEditOpenChange(false)" />
+      <app-edit-unit [unit]="unit" [moveOptions]="moveOptions()" [parentKind]="editingParentKind()" [childKinds]="editingChildKinds()" (closed)="onDialogClose('edit')" />
     }
   </ui-dialog>
 
-  <ui-dialog [open]="removing() !== null" (openChange)="$event || removing.set(null)">
-    @if (removing(); as unit) {
-      <ui-card heading="Eliminar unidad" [actions]="removeActions()" (action)="onRemoveAction($event)">
-        <p>Vas a eliminar <strong>{{ unitLabel(unit) }}</strong> ({{ kindLabels[unit.kind] }}).</p>
-        @if (removingCount() === 2) {
-          <p>Se elimina también la unidad que cuelga de ella.</p>
-        } @else if (removingCount() > 2) {
-          <p>Se eliminan también las <strong>{{ removingCount() - 1 }}</strong> unidades que cuelgan de ella.</p>
-        }
-        <p class="ui-muted">Es un borrado lógico: la unidad y sus contratos se conservan y puedes restaurarla desde "Mostrar eliminadas".</p>
-      </ui-card>
+  <ui-dialog [open]="removing() !== null" (openChange)="$event || onDialogClose('remove')">
+    @if (removing(); as node) {
+      <app-remove-unit [node]="node" (closed)="onDialogClose('remove')" />
     }
   </ui-dialog>
 
-  <ui-dialog [open]="restoring() !== null" (openChange)="onRestoreOpenChange($event)">
+  <ui-dialog [open]="restoring() !== null" (openChange)="$event || onDialogClose('restore')">
     @if (restoring(); as node) {
-      <app-restore-unit [node]="node" (closed)="onRestoreOpenChange(false)" />
+      <app-restore-unit [node]="node" (closed)="onDialogClose('restore')" />
     }
   </ui-dialog>
-
-  @if (actionError(); as error) {
-    <p class="ui-form__error">{{ error }}</p>
-  }
 
   @if (failed()) {
     <p class="ui-form__error">No se pudieron cargar las unidades.</p>
@@ -53,7 +41,7 @@
     } @else {
       <div class="unit-tree__list">
         @for (tree of trees; track tree.id) {
-          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="removing.set($event)" (restore)="restoring.set($event)" />
+          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="openRemove($event)" (restore)="restoring.set($event)" />
         }
       </div>
     }

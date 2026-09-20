@@ -94,19 +94,26 @@ describe('UnitTree', () => {
     expect(options).toEqual(['Los Álamos', '— Torre A', '— Edificio B']);
   });
 
-  it('should confirm the deletion with the subtree size, DELETE and reload', async () => {
+  it('should open the remove wizard with the subtree size, DELETE on finish and reload when closed', async () => {
     const fixture = await render();
     const el = fixture.nativeElement as HTMLElement;
     const rowButtons = (i: number) => el.querySelectorAll('.unit-node__row')[i].querySelectorAll<HTMLButtonElement>('.unit-node__actions button');
 
     rowButtons(1)[2].click(); // Eliminar Torre A
     await fixture.whenStable();
-    const confirm = el.querySelectorAll('dialog')[2];
-    expect(confirm.textContent).toContain('Vas a eliminar Torre A');
-    expect(confirm.textContent).toContain('Se elimina también la unidad que cuelga');
-    confirm.querySelectorAll<HTMLButtonElement>('.ui-card__actions button')[0].click();
-
+    const wizard = el.querySelector('app-remove-unit')!;
+    expect(wizard.textContent).toContain('Vas a eliminar Torre A');
+    expect(wizard.textContent).toContain('Se elimina también la unidad que cuelga');
+    const next = () => Array.from(wizard.querySelectorAll<HTMLButtonElement>('.ui-card__actions button')).at(-1)!;
+    next().click();
+    await fixture.whenStable();
+    expect(next().className).toContain('ui-button--danger');
+    next().click();
     http.expectOne((r) => r.method === 'DELETE' && r.url.endsWith('/units/a')).flush({ deleted: 2 });
+    await fixture.whenStable();
+    expect(wizard.textContent).toContain('Unidad eliminada');
+
+    wizard.querySelector<HTMLButtonElement>('.ui-card__actions button')!.click(); // Cerrar → recarga
     await fixture.whenStable();
     http.expectOne((r) => r.url.endsWith('/units')).flush([COMMUNITY]);
     await fixture.whenStable();

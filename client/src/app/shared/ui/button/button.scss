@@ -43,4 +43,14 @@
       background-color: var(--ui-color-hover);
     }
   }
+
+  // Solo para acciones destructivas (Finalizar de un wizard que elimina)
+  &--danger {
+    background-color: var(--ui-color-danger);
+    color: var(--ui-color-on-primary);
+
+    &:hover:not(:disabled) {
+      background-color: var(--ui-color-danger-hover);
+    }
+  }
 }

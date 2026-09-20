@@ -1,6 +1,7 @@
+// TAMAÑO FIJO: no depende del contenido, así los botones del wizard caen siempre en el mismo sitio
 .ui-dialog {
   width: min(40rem, calc(100vw - 2rem));
-  max-height: calc(100vh - 2rem);
+  height: min(40rem, calc(100vh - 2rem));
   padding: 0;
   border: 0;
   background: transparent;
@@ -12,7 +13,10 @@
 }
 
 .ui-dialog__panel {
+  display: flex;
+  flex-direction: column;
   position: relative;
+  height: 100%;
 }
 
 .ui-dialog__close {
@@ -32,4 +36,15 @@
     background-color: var(--ui-color-hover);
     color: var(--ui-color-text);
   }
+}
+
+// Lo proyectado (host del wizard, su div raíz y el ui-card) estira al alto del panel para que la
+// tarjeta ancle sus acciones abajo. ::ng-deep porque esos nodos no llevan el ámbito de este componente.
+:host ::ng-deep .ui-dialog__panel > :not(.ui-dialog__close),
+:host ::ng-deep .ui-dialog__panel > :not(.ui-dialog__close) > *,
+:host ::ng-deep .ui-dialog__panel > :not(.ui-dialog__close) > * > ui-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }

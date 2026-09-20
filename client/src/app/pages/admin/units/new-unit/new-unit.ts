@@ -29,9 +29,10 @@ export class NewUnit implements OnInit {
   // Tipos que admite el padre; vacío si el padre es una cuenta (no puede tener hijos)
   protected readonly kinds = computed(() => allowedChildKinds(this.parent()?.kind ?? null));
   protected readonly unitLabel = unitLabel;
+  // La primaria va última: queda más a la derecha
   protected readonly resultActions: CardAction[] = [
-    { id: 'close', label: 'Cerrar' },
     { id: 'another', label: 'Crear otra', variant: 'ghost' },
+    { id: 'close', label: 'Cerrar' },
   ];
 
   protected readonly form = inject(NonNullableFormBuilder).group({

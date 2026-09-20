@@ -30,6 +30,14 @@ class WizardHost {
   readonly finished = signal(false);
 }
 
+@Component({
+  imports: [Card],
+  template: `<ui-card heading="Eliminar" [steps]="['Presentación', 'Confirmar']" [(step)]="step" finishVariant="danger" />`,
+})
+class DangerHost {
+  readonly step = signal(0);
+}
+
 describe('Card', () => {
   it('should render the heading without a native title attribute', async () => {
     const fixture = TestBed.createComponent(Host);
@@ -89,5 +97,19 @@ describe('Card', () => {
     await fixture.whenStable();
     expect(buttons()[1].disabled).toBe(true);
     expect(buttons()[0].disabled).toBe(false);
+    expect(buttons()[0].closest('ui-button')?.className).toContain('ui-card__prev'); // Anterior a la izquierda
+  });
+
+  it('should paint Finalizar in danger only on the last step when finishVariant is danger', async () => {
+    const fixture = TestBed.createComponent(DangerHost);
+    await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
+    const main = () => Array.from(el.querySelectorAll<HTMLButtonElement>('.ui-card__actions button')).at(-1)!;
+
+    expect(main().className).toContain('ui-button--primary');
+    fixture.componentInstance.step.set(1);
+    await fixture.whenStable();
+    expect(main().textContent).toContain('Finalizar');
+    expect(main().className).toContain('ui-button--danger');
   });
 });

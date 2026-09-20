@@ -46,7 +46,7 @@ export class EditUser implements OnInit {
       case 1:
         return this.form.controls.fullName.valid && this.form.controls.email.valid;
       case 2:
-        return !this.saving();
+        return !this.saving() && this.hasChanges(); // Finalizar solo si hay un cambio real
       default:
         return true;
     }
@@ -60,6 +60,12 @@ export class EditUser implements OnInit {
       },
       error: () => this.loadFailed.set(true),
     });
+  }
+
+  protected hasChanges(): boolean {
+    const u = this.user();
+    const v = this.form.getRawValue();
+    return !!u && (v.fullName.trim() !== u.fullName || v.email.trim() !== u.email || (v.phone.trim() || null) !== u.phone || v.isActive !== u.isActive);
   }
 
   protected finish(): void {

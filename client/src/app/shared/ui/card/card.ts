@@ -5,7 +5,7 @@ import { Stepper } from '../stepper/stepper';
 export interface CardAction {
   id: string;
   label: string;
-  variant?: 'primary' | 'secondary' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   disabled?: boolean;
 }
 
@@ -25,6 +25,8 @@ export class Card {
   readonly step = model(0);
   /** En false deshabilita Siguiente / Finalizar (p. ej. paso con errores de validación). */
   readonly canAdvance = input(true);
+  /** Finalizar en rojo cuando el wizard elimina o da de baja; Siguiente nunca cambia. */
+  readonly finishVariant = input<'primary' | 'danger'>('primary');
 
   readonly action = output<string>();
   readonly finish = output<void>();

@@ -83,4 +83,14 @@ describe('UnitLevel', () => {
     await fixture.whenStable();
     expect(el.querySelector('app-edit-unit')?.textContent).toContain('Vas a modificar Torre A');
   });
+
+  it('should fetch the alive subtree and open the remove wizard', async () => {
+    const fixture = await render();
+    const el = fixture.nativeElement as HTMLElement;
+
+    el.querySelectorAll<HTMLButtonElement>('tbody .ui-table__actions button')[1].click(); // Eliminar
+    http.expectOne((r) => r.urlWithParams.endsWith('/units/a/tree')).flush({ ...BUILDINGS[0], children: [] });
+    await fixture.whenStable();
+    expect(el.querySelector('app-remove-unit')?.textContent).toContain('Vas a eliminar Torre A');
+  });
 });

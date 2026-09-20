@@ -23,9 +23,10 @@ export class NewUser {
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly created = signal<UserSummary | null>(null);
+  // La primaria va última: queda más a la derecha
   protected readonly resultActions: CardAction[] = [
-    { id: 'close', label: 'Cerrar' },
     { id: 'another', label: 'Crear otro', variant: 'ghost' },
+    { id: 'close', label: 'Cerrar' },
   ];
 
   protected readonly form = inject(NonNullableFormBuilder).group({

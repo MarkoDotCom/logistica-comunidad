@@ -3,16 +3,17 @@ import { Component, computed, inject, input, type OnInit, signal } from '@angula
 import { RouterLink } from '@angular/router';
 import { apiErrorMessage, CHILD_KIND, NEW_UNIT_LABELS, UNIT_KIND_LABELS, UNIT_KIND_PLURALS, unitLabel } from '../../../../core/labels';
 import { UnitsApi, type Unit, type UnitKind, type UnitNode, type UnitSummary } from '../../../../core/units.api';
-import { Button, Card, type CardAction, Dialog, Tag } from '../../../../shared/ui';
+import { Button, Dialog, Tag } from '../../../../shared/ui';
 import { EditUnit } from '../edit-unit/edit-unit';
 import { NewUnit } from '../new-unit/new-unit';
+import { RemoveUnit } from '../remove-unit/remove-unit';
 import { RestoreUnit } from '../restore-unit/restore-unit';
 
 // Tabla de un nivel del árbol (los hijos de `parent`, o las comunidades raíz si es null) con alta, edición,
-// borrado lógico y restauración en diálogos. Mover unidades no se ofrece aquí: se hace desde el Árbol.
+// borrado lógico y restauración, cada uno en su wizard. Mover unidades no se ofrece aquí: se hace desde el Árbol.
 @Component({
   selector: 'app-unit-level',
-  imports: [RouterLink, Button, Card, Dialog, EditUnit, NewUnit, RestoreUnit, Tag],
+  imports: [RouterLink, Button, Dialog, EditUnit, NewUnit, RemoveUnit, RestoreUnit, Tag],
   templateUrl: './unit-level.html',
   styleUrl: './unit-level.scss',
 })
@@ -30,9 +31,9 @@ export class UnitLevel implements OnInit {
   protected readonly showDeleted = signal(false);
   protected readonly newOpen = signal(false);
   protected readonly editing = signal<Unit | null>(null);
-  protected readonly removing = signal<Unit | null>(null);
+  // Nodos (con su subárbol) cuya eliminación o restauración está en un wizard; null = diálogo cerrado
+  protected readonly removing = signal<UnitNode | null>(null);
   protected readonly restoring = signal<UnitNode | null>(null);
-  protected readonly busy = signal(false);
   protected readonly actionError = signal<string | null>(null);
 
   protected readonly kindLabels = UNIT_KIND_LABELS;
@@ -41,10 +42,6 @@ export class UnitLevel implements OnInit {
   protected readonly newLabel = computed(() => NEW_UNIT_LABELS[this.childKind()]);
   // Cabecera de la columna de hijos: para filas de edificios, "Departamentos"; para cuentas no hay columna
   protected readonly childrenHeader = computed(() => (this.childKind() === 'account' ? null : UNIT_KIND_PLURALS[CHILD_KIND[this.childKind()]]));
-  protected readonly removeActions = computed<CardAction[]>(() => [
-    { id: 'confirm', label: 'Eliminar', disabled: this.busy() },
-    { id: 'cancel', label: 'Cancelar', variant: 'ghost' },
-  ]);
 
   ngOnInit(): void {
     this.load();
@@ -60,41 +57,29 @@ export class UnitLevel implements OnInit {
   }
 
   // Al cerrar cualquier diálogo se recarga: lo nuevo o modificado aparece en la tabla
-  protected onDialogClose(dialog: 'new' | 'edit' | 'restore'): void {
+  protected onDialogClose(dialog: 'new' | 'edit' | 'remove' | 'restore'): void {
     if (dialog === 'new') this.newOpen.set(false);
     if (dialog === 'edit') this.editing.set(null);
+    if (dialog === 'remove') this.removing.set(null);
     if (dialog === 'restore') this.restoring.set(null);
     this.load();
   }
 
-  /** El wizard de restaurar necesita el subárbol para contar qué vuelve: se pide con las eliminadas. */
-  protected openRestore(unit: Unit): void {
-    this.actionError.set(null);
-    this.api.tree(unit.id, true).subscribe({
-      next: (node) => this.restoring.set(node),
-      error: (e: HttpErrorResponse) => this.actionError.set(apiErrorMessage(e, 'No se pudo cargar la unidad')),
-    });
+  /** El wizard de eliminar necesita el subárbol vivo para decir qué se va. */
+  protected openRemove(unit: Unit): void {
+    this.fetchNode(unit, false, (node) => this.removing.set(node));
   }
 
-  protected onRemoveAction(action: string): void {
-    const unit = this.removing();
-    if (action !== 'confirm' || !unit) {
-      this.removing.set(null);
-      return;
-    }
-    this.busy.set(true);
+  /** El wizard de restaurar necesita el subárbol con las eliminadas para decir qué vuelve. */
+  protected openRestore(unit: Unit): void {
+    this.fetchNode(unit, true, (node) => this.restoring.set(node));
+  }
+
+  private fetchNode(unit: Unit, includeDeleted: boolean, then: (node: UnitNode) => void): void {
     this.actionError.set(null);
-    this.api.remove(unit.id).subscribe({
-      next: () => {
-        this.busy.set(false);
-        this.removing.set(null);
-        this.load();
-      },
-      error: (e: HttpErrorResponse) => {
-        this.busy.set(false);
-        this.removing.set(null);
-        this.actionError.set(apiErrorMessage(e, 'No se pudo eliminar la unidad'));
-      },
+    this.api.tree(unit.id, includeDeleted).subscribe({
+      next: then,
+      error: (e: HttpErrorResponse) => this.actionError.set(apiErrorMessage(e, 'No se pudo cargar la unidad')),
     });
   }
 

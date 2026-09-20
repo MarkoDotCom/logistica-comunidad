@@ -1,0 +1,36 @@
+<div class="wizard">
+  @if (deleted() !== null) {
+    <ui-card heading="Unidad eliminada" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name"><ui-tag>{{ kindLabels[node().kind] }}</ui-tag> {{ unitLabel(node()) }}</p>
+      <p class="ui-muted">{{ deleted() === 1 ? 'Se eliminó 1 unidad.' : 'Se eliminaron ' + deleted() + ' unidades.' }} Puedes restaurarlas desde "Mostrar eliminadas".</p>
+    </ui-card>
+  } @else {
+    <ui-card heading="Eliminar unidad" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" finishVariant="danger" (finish)="finish()">
+      @switch (step()) {
+        @case (0) {
+          <p>Vas a eliminar <strong>{{ unitLabel(node()) }}</strong> ({{ kindLabels[node().kind] }}).</p>
+          @if (companions() === 1) {
+            <p>Se elimina también la unidad que cuelga de ella.</p>
+          } @else if (companions() > 1) {
+            <p>Se eliminan también las <strong>{{ companions() }}</strong> unidades que cuelgan de ella.</p>
+          }
+          <p class="ui-muted">Es un borrado lógico: la unidad y sus contratos se conservan y puedes restaurarla desde "Mostrar eliminadas". Su código queda libre para otra unidad.</p>
+        }
+        @case (1) {
+          <dl class="wizard__summary">
+            <dt>Unidad</dt>
+            <dd>{{ unitLabel(node()) }}</dd>
+            <dt>Tipo</dt>
+            <dd>{{ kindLabels[node().kind] }}</dd>
+            <dt>Se van con ella</dt>
+            <dd>{{ companions() === 0 ? 'Ninguna' : companions() }}</dd>
+          </dl>
+          @if (error(); as error) {
+            <p class="ui-form__error">{{ error }}</p>
+          }
+        }
+      }
+    </ui-card>
+  }
+</div>

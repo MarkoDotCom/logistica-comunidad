@@ -80,7 +80,7 @@ export class ContractWizard implements OnInit {
       case 2:
         return this.form.controls.type.valid && this.datesOk() && this.form.controls.documentUrl.valid && this.form.controls.notes.valid;
       case 3:
-        return !this.saving();
+        return !this.saving() && (!this.isEdit() || Object.keys(this.patch()).length > 0); // al modificar, solo con un cambio real
       default:
         return true;
     }

@@ -64,6 +64,7 @@ describe('EditUser', () => {
 
   it('should show the API error and keep the wizard open', async () => {
     const fixture = await render();
+    fixture.componentInstance['form'].patchValue({ email: 'otra@example.com' }); // sin un cambio real no se puede finalizar
     fixture.componentInstance['step'].set(2);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;

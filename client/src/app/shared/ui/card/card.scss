@@ -1,4 +1,10 @@
+// Columna flex: si el contenedor fija la altura (ui-dialog), el cuerpo crece y las acciones quedan ancladas abajo.
+// Fuera de un modal nada fija la altura y la tarjeta es un bloque normal.
 .ui-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
   padding: 1.25rem;
   border: 1px solid var(--ui-color-border);
   border-radius: 0.75rem;
@@ -13,6 +19,9 @@
 }
 
 .ui-card__body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto; // el scroll va dentro del paso, nunca en el modal
   color: var(--ui-color-text-body);
 }
 
@@ -20,11 +29,17 @@
   margin: 0;
 }
 
+// La acción principal siempre a la derecha; solo Anterior a la izquierda
 .ui-card__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.ui-card__prev {
+  margin-right: auto;
 }
 
 .ui-card__stepper {

@@ -58,7 +58,7 @@ export class EditUnit implements OnInit {
       case 1:
         return this.form.controls.code.valid && this.form.controls.code.value.trim().length > 0;
       case 2:
-        return !this.saving();
+        return !this.saving() && Object.keys(this.patch()).length > 0; // Finalizar solo si hay un cambio real
       default:
         return true;
     }

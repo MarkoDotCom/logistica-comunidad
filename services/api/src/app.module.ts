@@ -1,10 +1,12 @@
 import { fileURLToPath } from 'node:url';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AppController } from './app.controller.js';
-import { AppService } from './app.service.js';
 import { DatabaseModule } from './database/database.module.js';
+import { RestModule } from './rest/rest.module.js';
 
+// Dos capas con dependencias en un solo sentido:
+//   rest      →  database   (endpoints HTTP de negocio)
+//   database  →  (nada nuestro)   (tablas vía Prisma)
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -13,8 +15,7 @@ import { DatabaseModule } from './database/database.module.js';
       envFilePath: fileURLToPath(new URL('../../../.env', import.meta.url)),
     }),
     DatabaseModule,
+    RestModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

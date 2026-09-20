@@ -16,6 +16,8 @@ No hay página `/ux`; el punto 6 del checklist de la guía general no aplica.
 
 ## Sesión y permisos
 
+El concepto completo (base, API y client), pensado para portarlo, está en [`docs/identidad-y-permisos.md`](../../docs/identidad-y-permisos.md).
+
 - `Session` (`core/session.ts`) guarda la cuenta y el access token en memoria (signals). `restore()` recupera la sesión con la cookie de refresh; `authInterceptor` añade el Bearer y, ante un 401, refresca una vez y repite. `sessionGuard` protege `/admin`; `permissionGuard('x.y')` cada sección (`core/sections.ts`).
 - Las acciones se **ocultan** sin permiso (`session.can('units.write')`): no se muestran deshabilitadas. Lectura: `units.read`, `users.read`, `roles.read`, `summary.read`; escritura: `units.write`, `units.delete`, `contracts.write`, `users.write`, `roles.write`.
 - Los specs de páginas usan `provideSessionWith(permissions)` de `core/session.testing.ts`.

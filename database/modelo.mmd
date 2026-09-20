@@ -1,12 +1,14 @@
 %% Modelo de datos — gestión logística de comunidad (PostgreSQL)
 %% Fuente de verdad: schema.sql. Renderizar: mmdc -i modelo.mmd -o modelo.svg
-%% Esquemas: units (unit), public (enum unit_kind y set_updated_at)
+%% Esquemas: units (unit), users (app_user, unit_member), public (enums y set_updated_at)
 erDiagram
 
   %% ---------------------------------------------------------------
   %% Relaciones
   %% ---------------------------------------------------------------
   unit o|--o{ unit : "parent_id"
+  unit     ||--o{ unit_member : "tiene miembros"
+  app_user ||--o{ unit_member : "tiene rol en"
 
   %% ---------------------------------------------------------------
   %% Entidades
@@ -20,4 +22,22 @@ erDiagram
     boolean is_active
     timestamptz created_at
     timestamptz updated_at
+  }
+
+  app_user {
+    uuid id PK
+    citext email UK
+    text external_auth_id UK
+    text full_name
+    text phone
+    boolean is_active
+    timestamptz created_at
+    timestamptz updated_at
+  }
+
+  unit_member {
+    uuid unit_id PK_FK
+    uuid user_id PK_FK
+    unit_role role PK "admin | owner | tenant | staff"
+    timestamptz created_at
   }

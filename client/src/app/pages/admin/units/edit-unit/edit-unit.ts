@@ -44,7 +44,6 @@ export class EditUnit implements OnInit {
     code: ['', [Validators.required, Validators.maxLength(50)]],
     name: [''],
     parentId: [''],
-    isActive: [true],
   });
 
   protected readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
@@ -65,7 +64,7 @@ export class EditUnit implements OnInit {
 
   ngOnInit(): void {
     const u = this.unit();
-    this.form.setValue({ kind: u.kind, code: u.code, name: u.name ?? '', parentId: u.parentId ?? '', isActive: u.isActive });
+    this.form.setValue({ kind: u.kind, code: u.code, name: u.name ?? '', parentId: u.parentId ?? '' });
   }
 
   /** Solo lo que cambió respecto a la unidad original. */
@@ -75,7 +74,6 @@ export class EditUnit implements OnInit {
     const patch: UpdateUnit = {};
     if (v.code.trim() !== u.code) patch.code = v.code.trim();
     if ((v.name.trim() || null) !== u.name) patch.name = v.name.trim() || null;
-    if (v.isActive !== u.isActive) patch.isActive = v.isActive;
     if (!this.isCommunity()) {
       if (v.kind !== u.kind) patch.kind = v.kind;
       if (v.parentId && v.parentId !== u.parentId) patch.parentId = v.parentId;

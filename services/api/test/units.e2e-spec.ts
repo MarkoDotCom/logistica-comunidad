@@ -47,7 +47,7 @@ describe('Unidades (e2e)', () => {
   it('creates a community and its children, enforcing root and sibling-code rules', async () => {
     const community = await request(app.getHttpServer()).post('/units').send({ kind: 'community', code: `e2e-${suffix}`, name: 'E2E' }).expect(201);
     communityId = community.body.data.id;
-    expect(community.body.data).toMatchObject({ parentId: null, kind: 'community', isActive: true });
+    expect(community.body.data).toMatchObject({ parentId: null, kind: 'community', deletedAt: null });
 
     const tower = await request(app.getHttpServer()).post('/units').send({ kind: 'building', code: 'T1', parentId: communityId }).expect(201);
     await request(app.getHttpServer()).post('/units').send({ kind: 'apartment', code: '11', parentId: tower.body.data.id }).expect(201);
@@ -63,8 +63,8 @@ describe('Unidades (e2e)', () => {
     const [tower] = (await request(app.getHttpServer()).get(`/units?parentId=${communityId}`)).body.data;
     const [apt] = (await request(app.getHttpServer()).get(`/units?parentId=${tower.id}`)).body.data;
 
-    const renamed = await request(app.getHttpServer()).patch(`/units/${tower.id}`).send({ name: 'Torre uno', isActive: false }).expect(200);
-    expect(renamed.body.data).toMatchObject({ name: 'Torre uno', isActive: false });
+    const renamed = await request(app.getHttpServer()).patch(`/units/${tower.id}`).send({ name: 'Torre uno' }).expect(200);
+    expect(renamed.body.data).toMatchObject({ name: 'Torre uno' });
 
     // Mover la torre bajo su propio departamento crearía un ciclo
     await request(app.getHttpServer()).patch(`/units/${tower.id}`).send({ parentId: apt.id }).expect(400);
@@ -74,5 +74,40 @@ describe('Unidades (e2e)', () => {
 
     const tree = await request(app.getHttpServer()).get(`/units/${communityId}/tree`).expect(200);
     expect(tree.body.data.children.map((u: { code: string }) => u.code)).toEqual(['11', 'T1']);
+  });
+
+  it('soft-deletes a subtree, hides it, frees the code and restores it top-down', async () => {
+    const children = (await request(app.getHttpServer()).get(`/units?parentId=${communityId}`)).body.data as { id: string; code: string }[];
+    const tower = children.find((u) => u.code === 'T1')!;
+    const apt = children.find((u) => u.code === '11')!; // movido bajo la comunidad en el test anterior
+    // Un hijo nuevo dentro de la torre para que la cascada tenga algo que arrastrar
+    await request(app.getHttpServer()).post('/units').send({ kind: 'apartment', code: '12', parentId: tower.id }).expect(201);
+
+    const del = await request(app.getHttpServer()).delete(`/units/${tower.id}`).expect(200);
+    expect(del.body.data).toEqual({ deleted: 2 });
+
+    // Desaparece de listas, árbol y GET; el árbol con includeDeleted la muestra con deletedAt
+    const after = (await request(app.getHttpServer()).get(`/units?parentId=${communityId}`)).body.data as { code: string }[];
+    expect(after.map((u) => u.code)).toEqual(['11']);
+    await request(app.getHttpServer()).get(`/units/${tower.id}`).expect(404);
+    await request(app.getHttpServer()).patch(`/units/${tower.id}`).send({ name: 'x' }).expect(404);
+    const withDeleted = await request(app.getHttpServer()).get(`/units/${communityId}/tree?includeDeleted=true`).expect(200);
+    const deletedTower = withDeleted.body.data.children.find((u: { id: string }) => u.id === tower.id);
+    expect(deletedTower.deletedAt).not.toBeNull();
+    expect(deletedTower.children[0].deletedAt).toBe(deletedTower.deletedAt);
+
+    // El código T1 queda libre; con una T1 viva no se puede restaurar la vieja
+    const twin = await request(app.getHttpServer()).post('/units').send({ kind: 'building', code: 'T1', parentId: communityId }).expect(201);
+    await request(app.getHttpServer()).post(`/units/${tower.id}/restore`).expect(409);
+    await request(app.getHttpServer()).delete(`/units/${twin.body.data.id}`).expect(200);
+
+    // Restaurar un hijo cuyo padre sigue eliminado se rechaza; restaurar el padre trae al hijo
+    await request(app.getHttpServer()).post(`/units/${deletedTower.children[0].id}/restore`).expect(400);
+    const restored = await request(app.getHttpServer()).post(`/units/${tower.id}/restore`).expect(200);
+    expect(restored.body.data).toMatchObject({ id: tower.id, deletedAt: null });
+    const tree = await request(app.getHttpServer()).get(`/units/${tower.id}/tree`).expect(200);
+    expect(tree.body.data.children.map((u: { code: string }) => u.code)).toEqual(['12']);
+    await request(app.getHttpServer()).post(`/units/${tower.id}/restore`).expect(400); // ya está viva
+    await request(app.getHttpServer()).post(`/units/${apt.id}/restore`).expect(400);
   });
 });

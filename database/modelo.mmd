@@ -19,7 +19,7 @@ erDiagram
     unit_kind kind "community | building | apartment | account"
     text code "único entre hermanos"
     text name
-    boolean is_active
+    timestamptz deleted_at "NULL = viva"
     timestamptz created_at
     timestamptz updated_at
   }

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { NewUnit } from './new-unit';
 
-const TOWER = { id: 'a', parentId: 'c', kind: 'building' as const, code: 'A', name: 'Torre A', isActive: true };
+const TOWER = { id: 'a', parentId: 'c', kind: 'building' as const, code: 'A', name: 'Torre A', deletedAt: null };
 
 describe('NewUnit', () => {
   let http: HttpTestingController;
@@ -42,7 +42,7 @@ describe('NewUnit', () => {
 
     const post = http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/units'));
     expect(post.request.body).toEqual({ kind: 'apartment', code: '103', name: undefined, parentId: 'a' });
-    post.flush({ id: 'n', parentId: 'a', kind: 'apartment', code: '103', name: null, isActive: true });
+    post.flush({ id: 'n', parentId: 'a', kind: 'apartment', code: '103', name: null, deletedAt: null });
     await fixture.whenStable();
     expect(el.textContent).toContain('Unidad creada');
     expect(el.textContent).toContain('Cuelga de Torre A');

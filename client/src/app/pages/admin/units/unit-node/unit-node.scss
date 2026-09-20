@@ -12,9 +12,12 @@
   }
 }
 
-.unit-node--inactive > .unit-node__row .unit-node__label {
-  color: var(--ui-color-text-muted);
-  text-decoration: line-through;
+.unit-node--deleted > .unit-node__row {
+  opacity: 0.6;
+
+  .unit-node__label {
+    text-decoration: line-through;
+  }
 }
 
 .unit-node__toggle {

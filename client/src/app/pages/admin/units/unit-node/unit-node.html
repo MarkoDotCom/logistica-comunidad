@@ -1,4 +1,4 @@
-<div class="unit-node" [class.unit-node--inactive]="!node().isActive" [style.--depth]="depth()">
+<div class="unit-node" [class.unit-node--deleted]="node().deletedAt" [style.--depth]="depth()">
   <div class="unit-node__row">
     @if (node().children.length) {
       <button type="button" class="unit-node__toggle" [attr.aria-expanded]="open()" [attr.aria-label]="open() ? 'Contraer' : 'Expandir'" (click)="open.set(!open())">
@@ -12,18 +12,30 @@
     @if (node().name) {
       <span class="ui-muted">{{ node().code }}</span>
     }
-    @if (!node().isActive) {
-      <span class="ui-muted">· inactiva</span>
+    @if (node().deletedAt) {
+      <span class="ui-muted">· eliminada</span>
     }
     <span class="unit-node__actions">
-      <ui-button variant="ghost" (clicked)="add.emit(node())">+ Hijo</ui-button>
-      <ui-button variant="secondary" (clicked)="edit.emit(node())">Modificar</ui-button>
+      @if (node().deletedAt) {
+        <ui-button variant="secondary" (clicked)="restore.emit(node())">Restaurar</ui-button>
+      } @else {
+        <ui-button variant="ghost" (clicked)="add.emit(node())">+ Hijo</ui-button>
+        <ui-button variant="secondary" (clicked)="edit.emit(node())">Modificar</ui-button>
+        <ui-button variant="ghost" (clicked)="remove.emit(node())">Eliminar</ui-button>
+      }
     </span>
   </div>
 
   @if (open()) {
     @for (child of node().children; track child.id) {
-      <app-unit-node [node]="child" [depth]="depth() + 1" (add)="add.emit($event)" (edit)="edit.emit($event)" />
+      <app-unit-node
+        [node]="child"
+        [depth]="depth() + 1"
+        (add)="add.emit($event)"
+        (edit)="edit.emit($event)"
+        (remove)="remove.emit($event)"
+        (restore)="restore.emit($event)"
+      />
     }
   }
 </div>

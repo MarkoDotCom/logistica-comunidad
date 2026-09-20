@@ -20,7 +20,7 @@ export function buildTree(units: UnitDto[]): UnitNode {
 export class UnitsService {
   constructor(private readonly units: UnitTable) {}
 
-  /** Hijos directos de `parentId`; sin él, las comunidades raíz. */
+  /** Hijos directos vivos de `parentId`; sin él, las comunidades raíz. */
   findChildren(parentId?: string): Promise<UnitDto[]> {
     return this.units.listChildren(parentId ?? null);
   }
@@ -31,8 +31,9 @@ export class UnitsService {
     return unit;
   }
 
-  async findTree(id: string): Promise<UnitNode> {
-    const flat = await this.units.subtree(id);
+  /** El subárbol vivo; con `includeDeleted`, también las eliminadas (para poder restaurarlas). */
+  async findTree(id: string, includeDeleted = false): Promise<UnitNode> {
+    const flat = await this.units.subtree(id, includeDeleted);
     if (flat.length === 0) throw new NotFoundException('Unidad no encontrada');
     return buildTree(flat);
   }
@@ -61,7 +62,27 @@ export class UnitsService {
     return this.units.update(id, dto);
   }
 
-  /** Reglas de ubicación: community es la única raíz, el padre existe y el código no se repite entre hermanos. */
+  /** Borrado lógico de la unidad y su subárbol. Devuelve cuántas unidades se eliminaron. */
+  async remove(id: string): Promise<{ deleted: number }> {
+    await this.findOne(id);
+    return { deleted: await this.units.softDelete(id) };
+  }
+
+  /** Revierte un borrado lógico. El padre debe estar vivo: se restaura de arriba hacia abajo. */
+  async restore(id: string): Promise<UnitDto> {
+    const unit = await this.units.findAny(id);
+    if (!unit) throw new NotFoundException('Unidad no encontrada');
+    if (!unit.deletedAt) throw new BadRequestException('La unidad no está eliminada');
+    if (unit.parentId && !(await this.units.find(unit.parentId))) {
+      throw new BadRequestException('La unidad padre está eliminada; restaúrala primero');
+    }
+    if (await this.units.existsSiblingCode(unit.parentId, unit.code)) {
+      throw new ConflictException('Ya existe una unidad viva con ese código en el mismo nivel');
+    }
+    return this.units.restore(id);
+  }
+
+  /** Reglas de ubicación: community es la única raíz, el padre existe (vivo) y el código no se repite entre hermanos vivos. */
   private async assertValidPlacement(kind: UnitDto['kind'], parentId: string | null, code: string, exceptId?: string): Promise<void> {
     if (kind === 'community' && parentId) throw new BadRequestException('Una comunidad no puede tener unidad padre');
     if (kind !== 'community' && !parentId) throw new BadRequestException('Toda unidad que no sea comunidad necesita parentId');

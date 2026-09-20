@@ -13,10 +13,10 @@ export interface Unit {
   kind: UnitKind;
   code: string;
   name: string | null;
-  isActive: boolean;
+  deletedAt: string | null; // ISO 8601; null = viva
 }
 
-// GET /units/:id/tree
+// GET /units/:id/tree (con ?includeDeleted=true también las eliminadas)
 export interface UnitNode extends Unit {
   children: UnitNode[];
 }
@@ -34,7 +34,6 @@ export interface UpdateUnit {
   kind?: UnitKind;
   code?: string;
   name?: string | null;
-  isActive?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -47,8 +46,9 @@ export class UnitsApi {
     return this.http.get<Unit[]>(`${environment.apiUrl}/units`, { params });
   }
 
-  tree(id: string): Observable<UnitNode> {
-    return this.http.get<UnitNode>(`${environment.apiUrl}/units/${id}/tree`);
+  tree(id: string, includeDeleted = false): Observable<UnitNode> {
+    const params = includeDeleted ? new HttpParams().set('includeDeleted', 'true') : undefined;
+    return this.http.get<UnitNode>(`${environment.apiUrl}/units/${id}/tree`, { params });
   }
 
   create(unit: CreateUnit): Observable<Unit> {
@@ -57,5 +57,14 @@ export class UnitsApi {
 
   update(id: string, unit: UpdateUnit): Observable<Unit> {
     return this.http.patch<Unit>(`${environment.apiUrl}/units/${id}`, unit);
+  }
+
+  /** Borrado lógico de la unidad y su subárbol. Devuelve cuántas se eliminaron. */
+  remove(id: string): Observable<{ deleted: number }> {
+    return this.http.delete<{ deleted: number }>(`${environment.apiUrl}/units/${id}`);
+  }
+
+  restore(id: string): Observable<Unit> {
+    return this.http.post<Unit>(`${environment.apiUrl}/units/${id}/restore`, {});
   }
 }

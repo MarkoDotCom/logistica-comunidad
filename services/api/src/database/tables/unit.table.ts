@@ -8,7 +8,7 @@ export interface UnitDto {
   kind: unit_kind;
   code: string;
   name: string | null;
-  isActive: boolean;
+  deletedAt: string | null; // ISO 8601; null = viva
 }
 
 export interface NewUnit {
@@ -23,7 +23,6 @@ export interface UnitPatch {
   kind?: unit_kind;
   code?: string;
   name?: string | null;
-  isActive?: boolean;
 }
 
 interface Row {
@@ -32,51 +31,60 @@ interface Row {
   kind: unit_kind;
   code: string;
   name: string | null;
-  is_active: boolean;
+  deleted_at: Date | null;
 }
 
 function toUnit(row: Row): UnitDto {
-  return { id: row.id, parentId: row.parent_id, kind: row.kind, code: row.code, name: row.name, isActive: row.is_active };
+  return { id: row.id, parentId: row.parent_id, kind: row.kind, code: row.code, name: row.name, deletedAt: row.deleted_at?.toISOString() ?? null };
 }
 
+// Las operaciones normales ven solo unidades vivas (deleted_at IS NULL); las que dicen "any" o "includeDeleted" ven todas.
 @Injectable()
 export class UnitTable {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Hijos directos de una unidad; con `null`, las comunidades raíz. */
+  /** Hijos directos vivos de una unidad; con `null`, las comunidades raíz vivas. */
   async listChildren(parentId: string | null): Promise<UnitDto[]> {
-    const rows = await this.prisma.unit.findMany({ where: { parent_id: parentId }, orderBy: { code: 'asc' } });
+    const rows = await this.prisma.unit.findMany({ where: { parent_id: parentId, deleted_at: null }, orderBy: { code: 'asc' } });
     return rows.map(toUnit);
   }
 
-  /** Unidades activas por tipo. */
+  /** Unidades vivas por tipo. */
   async countByKind(): Promise<Record<unit_kind, number>> {
-    const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { is_active: true }, _count: { _all: true } });
+    const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { deleted_at: null }, _count: { _all: true } });
     const counts = { community: 0, building: 0, apartment: 0, account: 0 };
     for (const g of groups) counts[g.kind] = g._count._all;
     return counts;
   }
 
+  /** Una unidad viva. */
   async find(id: string): Promise<UnitDto | null> {
+    const row = await this.prisma.unit.findUnique({ where: { id, deleted_at: null } });
+    return row && toUnit(row);
+  }
+
+  /** Una unidad, viva o eliminada. */
+  async findAny(id: string): Promise<UnitDto | null> {
     const row = await this.prisma.unit.findUnique({ where: { id } });
     return row && toUnit(row);
   }
 
-  /** La unidad y todo su subárbol, en orden de recorrido (padres antes que hijos). */
-  async subtree(id: string): Promise<UnitDto[]> {
+  /** La unidad y todo su subárbol, en orden de recorrido (padres antes que hijos). Sin `includeDeleted`, solo lo vivo. */
+  async subtree(id: string, includeDeleted = false): Promise<UnitDto[]> {
     const rows = await this.prisma.$queryRaw<Row[]>`
       WITH RECURSIVE tree AS (
-        SELECT id, parent_id, kind, code, name, is_active, 0 AS depth, code::text AS path
-        FROM units.unit WHERE id = ${id}::uuid
+        SELECT id, parent_id, kind, code, name, deleted_at, 0 AS depth, code::text AS path
+        FROM units.unit WHERE id = ${id}::uuid AND (${includeDeleted} OR deleted_at IS NULL)
         UNION ALL
-        SELECT u.id, u.parent_id, u.kind, u.code, u.name, u.is_active, t.depth + 1, t.path || '/' || u.code
+        SELECT u.id, u.parent_id, u.kind, u.code, u.name, u.deleted_at, t.depth + 1, t.path || '/' || u.code
         FROM units.unit u JOIN tree t ON u.parent_id = t.id
+        WHERE ${includeDeleted} OR u.deleted_at IS NULL
       )
-      SELECT id, parent_id, kind, code, name, is_active FROM tree ORDER BY depth, path`;
+      SELECT id, parent_id, kind, code, name, deleted_at FROM tree ORDER BY depth, path`;
     return rows.map(toUnit);
   }
 
-  /** ¿`candidateId` es `ancestorId` o cuelga de él? Sirve para impedir ciclos al mover una unidad. */
+  /** ¿`candidateId` es `ancestorId` o cuelga de él (viva o eliminada)? Sirve para impedir ciclos al mover una unidad. */
   async isSelfOrDescendant(ancestorId: string, candidateId: string): Promise<boolean> {
     const rows = await this.prisma.$queryRaw<{ found: boolean }[]>`
       WITH RECURSIVE tree AS (
@@ -88,9 +96,9 @@ export class UnitTable {
     return rows[0]?.found ?? false;
   }
 
-  /** ¿Ya hay un hermano con ese código bajo `parentId` (o una raíz, si es null)? */
+  /** ¿Ya hay un hermano vivo con ese código bajo `parentId` (o una raíz viva, si es null)? */
   async existsSiblingCode(parentId: string | null, code: string, exceptId?: string): Promise<boolean> {
-    return (await this.prisma.unit.count({ where: { parent_id: parentId, code, ...(exceptId ? { id: { not: exceptId } } : {}) } })) > 0;
+    return (await this.prisma.unit.count({ where: { parent_id: parentId, code, deleted_at: null, ...(exceptId ? { id: { not: exceptId } } : {}) } })) > 0;
   }
 
   async create(unit: NewUnit): Promise<UnitDto> {
@@ -99,10 +107,32 @@ export class UnitTable {
   }
 
   async update(id: string, patch: UnitPatch): Promise<UnitDto> {
-    const row = await this.prisma.unit.update({
-      where: { id },
-      data: { parent_id: patch.parentId, kind: patch.kind, code: patch.code, name: patch.name, is_active: patch.isActive },
-    });
+    const row = await this.prisma.unit.update({ where: { id }, data: { parent_id: patch.parentId, kind: patch.kind, code: patch.code, name: patch.name } });
     return toUnit(row);
+  }
+
+  /** Borrado lógico de la unidad y de todo su subárbol vivo, con el mismo instante. Devuelve cuántas se marcaron. */
+  async softDelete(id: string): Promise<number> {
+    return this.prisma.$executeRaw`
+      WITH RECURSIVE tree AS (
+        SELECT id FROM units.unit WHERE id = ${id}::uuid
+        UNION ALL
+        SELECT u.id FROM units.unit u JOIN tree t ON u.parent_id = t.id
+      )
+      UPDATE units.unit SET deleted_at = now() WHERE id IN (SELECT id FROM tree) AND deleted_at IS NULL`;
+  }
+
+  /** Revierte el borrado de la unidad y de las del subárbol que se eliminaron con ella (mismo deleted_at). */
+  async restore(id: string): Promise<UnitDto> {
+    await this.prisma.$executeRaw`
+      WITH RECURSIVE tree AS (
+        SELECT id, deleted_at FROM units.unit WHERE id = ${id}::uuid
+        UNION ALL
+        SELECT u.id, u.deleted_at FROM units.unit u JOIN tree t ON u.parent_id = t.id
+      )
+      UPDATE units.unit SET deleted_at = NULL
+      WHERE id IN (SELECT id FROM tree)
+        AND deleted_at = (SELECT deleted_at FROM units.unit WHERE id = ${id}::uuid)`;
+    return (await this.findAny(id))!;
   }
 }

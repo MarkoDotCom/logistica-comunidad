@@ -2,9 +2,9 @@ import { Test } from '@nestjs/testing';
 import { UnitTable } from '../../database/tables/unit.table.js';
 import { buildTree, UnitsService } from './units.service.js';
 
-const community = { id: 'c', parentId: null, kind: 'community' as const, code: 'los-alamos', name: 'Los Álamos', isActive: true };
-const towerA = { id: 'a', parentId: 'c', kind: 'building' as const, code: 'A', name: 'Torre A', isActive: true };
-const apt101 = { id: 'a101', parentId: 'a', kind: 'apartment' as const, code: '101', name: null, isActive: true };
+const community = { id: 'c', parentId: null, kind: 'community' as const, code: 'los-alamos', name: 'Los Álamos', deletedAt: null };
+const towerA = { id: 'a', parentId: 'c', kind: 'building' as const, code: 'A', name: 'Torre A', deletedAt: null };
+const apt101 = { id: 'a101', parentId: 'a', kind: 'apartment' as const, code: '101', name: null, deletedAt: null };
 
 async function serviceWith(table: Partial<Record<keyof UnitTable, unknown>>): Promise<UnitsService> {
   const moduleRef = await Test.createTestingModule({ providers: [UnitsService, { provide: UnitTable, useValue: table }] }).compile();
@@ -63,5 +63,39 @@ describe('UnitsService', () => {
     expect(existsSiblingCode).toHaveBeenCalledWith('c', '101', 'a101');
 
     await expect(service.update('nope', {})).rejects.toThrow('Unidad no encontrada');
+  });
+});
+
+describe('UnitsService: borrado lógico', () => {
+  it('soft-deletes an alive unit and reports how many were marked', async () => {
+    const find = vi.fn().mockResolvedValueOnce(towerA).mockResolvedValueOnce(null);
+    const softDelete = vi.fn().mockResolvedValue(3);
+    const service = await serviceWith({ find, softDelete });
+
+    await expect(service.remove('a')).resolves.toEqual({ deleted: 3 });
+    await expect(service.remove('a')).rejects.toThrow('Unidad no encontrada'); // ya eliminada: no se ve
+    expect(softDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores only when deleted, with an alive parent and a free code', async () => {
+    const deleted = { ...apt101, deletedAt: '2026-09-20T00:00:00.000Z' };
+    const findAny = vi.fn().mockResolvedValue(deleted);
+    const find = vi.fn().mockResolvedValue(towerA);
+    const existsSiblingCode = vi.fn().mockResolvedValue(false);
+    const restore = vi.fn().mockResolvedValue(apt101);
+    const service = await serviceWith({ findAny, find, existsSiblingCode, restore });
+
+    await expect(service.restore('a101')).resolves.toEqual(apt101);
+    expect(existsSiblingCode).toHaveBeenCalledWith('a', '101');
+
+    findAny.mockResolvedValueOnce(apt101);
+    await expect(service.restore('a101')).rejects.toThrow('no está eliminada');
+
+    find.mockResolvedValueOnce(null);
+    await expect(service.restore('a101')).rejects.toThrow('restaúrala primero');
+
+    existsSiblingCode.mockResolvedValueOnce(true);
+    await expect(service.restore('a101')).rejects.toThrow('código en el mismo nivel');
+    expect(restore).toHaveBeenCalledTimes(1);
   });
 });

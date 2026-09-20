@@ -13,7 +13,7 @@ community (comunidad)            ← administration, employment
 
 | Archivo      | Contenido                                                             |
 |--------------|-----------------------------------------------------------------------|
-| `schema.sql` | Esquemas `units` y `users`, enums, tablas, índices y triggers `updated_at` |
+| `schema.sql` | Esquemas `units` y `users`, enums, tablas, índices parciales y triggers `updated_at` |
 | `seed.sql`   | Datos de ejemplo: 1 comunidad, 2 edificios, 4 departamentos, 4 cuentas, 5 usuarios, 7 contratos |
 | `modelo.mmd` | Diagrama ER en Mermaid                                                |
 
@@ -57,7 +57,7 @@ erDiagram
     unit_kind kind
     text code
     text name
-    boolean is_active
+    timestamptz deleted_at
   }
   app_user {
     uuid id PK
@@ -82,7 +82,7 @@ erDiagram
 
 | Tabla  | Descripción |
 |--------|-------------|
-| `unit` | Nodo del árbol. `kind` dice qué es; `parent_id` de quién cuelga. `code` es el identificador visible ("A", "101", "GC") y es único entre hermanos. `name` es opcional. `is_active = false` desactiva sin borrar. |
+| `unit` | Nodo del árbol. `kind` dice qué es; `parent_id` de quién cuelga. `code` es el identificador visible ("A", "101", "GC") y es único entre hermanos vivos. `name` es opcional. `deleted_at` distinto de NULL = eliminada lógicamente. |
 
 ### Usuarios
 
@@ -98,7 +98,8 @@ erDiagram
 - **Ciclos**: la base solo impide que una unidad sea su propio padre. Evitar ciclos al reasignar `parent_id` es responsabilidad de la aplicación.
 - **Alcance del contrato**: aplica a la unidad y a todo su subárbol (administración de la comunidad ve todo; dueño de un departamento ve su cuenta). La base no restringe qué tipo de contrato va en qué tipo de unidad; lo decide la aplicación.
 - **Vigencia**: un contrato está vigente si `starts_at <= hoy` y (`ends_at IS NULL` o `ends_at >= hoy`). La base no impide solapamientos entre contratos de la misma persona y unidad; lo controla la aplicación.
-- **Borrado**: `ON DELETE CASCADE` desde el padre y desde `app_user`; borrar una comunidad borra su árbol y los contratos.
+- **Borrado lógico**: la API nunca borra unidades físicamente. `DELETE /units/:id` pone `deleted_at` en la unidad y en todo su subárbol (mismo instante); restaurar revierte las que se eliminaron juntas. Las eliminadas quedan fuera de listas, árbol y métricas, y liberan su `code` (los índices únicos son parciales sobre `deleted_at IS NULL`). Sus contratos no se tocan.
+- **Borrado físico**: solo con SQL directo. `ON DELETE CASCADE` desde el padre y desde `app_user`.
 
 ## Convenciones
 
@@ -116,6 +117,7 @@ WITH RECURSIVE tree AS (
   UNION ALL
   SELECT u.id, u.parent_id, u.kind, u.code, t.depth + 1, t.path || ' / ' || u.code
   FROM units.unit u JOIN tree t ON u.parent_id = t.id
+  WHERE u.deleted_at IS NULL
 )
 SELECT depth, kind, path FROM tree ORDER BY path;
 
@@ -125,7 +127,7 @@ WITH RECURSIVE reach AS (
   WHERE c.user_id = '50000000-0000-4000-8000-000000000002'
     AND c.starts_at <= current_date AND (c.ends_at IS NULL OR c.ends_at >= current_date)
   UNION
-  SELECT u.id, r.type FROM units.unit u JOIN reach r ON u.parent_id = r.id
+  SELECT u.id, r.type FROM units.unit u JOIN reach r ON u.parent_id = r.id WHERE u.deleted_at IS NULL
 )
 SELECT r.type, u.kind, u.code FROM reach r JOIN units.unit u ON u.id = r.id ORDER BY 1, 2, 3;
 

@@ -3,7 +3,6 @@
     <ui-card heading="Unidad actualizada" [actions]="resultActions" (action)="closed.emit()">
       <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
       <p class="wizard__result-name"><ui-tag>{{ kindLabels[unit.kind] }}</ui-tag> {{ unitLabel(unit) }}</p>
-      <p class="ui-muted">{{ unit.isActive ? 'Activa' : 'Inactiva' }}</p>
     </ui-card>
   } @else {
     <ui-card heading="Modificar unidad" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
@@ -12,7 +11,7 @@
           @case (0) {
             <p>Vas a modificar <strong>{{ unitLabel(unit()) }}</strong> ({{ kindLabels[unit().kind] }}).</p>
             <ol class="wizard__intro">
-              <li><strong>Datos:</strong> código, nombre, estado@if (!isCommunity()) {, tipo y de qué unidad cuelga}.</li>
+              <li><strong>Datos:</strong> código y nombre@if (!isCommunity()) {, tipo y de qué unidad cuelga}.</li>
               <li><strong>Confirmar:</strong> revisas los cambios y se guardan.</li>
             </ol>
             @if (!isCommunity()) {
@@ -51,10 +50,6 @@
                 </select>
               </label>
             }
-            <label class="ui-checkbox">
-              <input type="checkbox" formControlName="isActive" />
-              Unidad activa
-            </label>
           }
           @case (2) {
             <dl class="wizard__summary">
@@ -68,8 +63,6 @@
                 <dt>Cuelga de</dt>
                 <dd>{{ parentLabel() }}</dd>
               }
-              <dt>Estado</dt>
-              <dd>{{ value().isActive ? 'Activa' : 'Inactiva' }}</dd>
             </dl>
             @if (error(); as error) {
               <p class="ui-form__error">{{ error }}</p>

@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { EditUnit } from './edit-unit';
 
-const APT = { id: 'a101', parentId: 'a', kind: 'apartment' as const, code: '101', name: null, isActive: true };
+const APT = { id: 'a101', parentId: 'a', kind: 'apartment' as const, code: '101', name: null, deletedAt: null };
 const OPTIONS = [{ id: 'c', label: 'Los Álamos' }, { id: 'a', label: '— Torre A' }, { id: 'b', label: '— Torre B' }];
 
 describe('EditUnit', () => {
@@ -47,7 +47,7 @@ describe('EditUnit', () => {
   });
 
   it('should hide kind and parent for a community and show the API error', async () => {
-    const fixture = await render({ id: 'c', parentId: null, kind: 'community', code: 'los-alamos', name: 'Los Álamos', isActive: true }, []);
+    const fixture = await render({ id: 'c', parentId: null, kind: 'community', code: 'los-alamos', name: 'Los Álamos', deletedAt: null }, []);
     const el = fixture.nativeElement as HTMLElement;
 
     fixture.componentInstance['step'].set(1);

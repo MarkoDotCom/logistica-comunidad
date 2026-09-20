@@ -35,22 +35,25 @@ $$ LANGUAGE plpgsql;
 -- Árbol de unidades anidables: community > building > apartment > account.
 -- La jerarquía es flexible: cualquier unidad puede colgar de cualquier otra;
 -- solo se exige que community sea raíz y que el resto tenga padre.
+-- Borrado lógico: deleted_at marca la unidad (y su subárbol, lo hace la aplicación) como eliminada.
+-- Nunca se borra físicamente desde la API; los contratos e historial quedan.
 CREATE TABLE units.unit (
   id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   parent_id  uuid REFERENCES units.unit(id) ON DELETE CASCADE,
   kind       unit_kind NOT NULL,
   code       text NOT NULL,                     -- identificador visible: "Torre A", "1203", "GC"
   name       text,                              -- nombre descriptivo opcional
-  is_active  boolean NOT NULL DEFAULT true,
+  deleted_at timestamptz,                       -- NULL = viva
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT unit_root_is_community CHECK ((kind = 'community') = (parent_id IS NULL)),
   CONSTRAINT unit_not_own_parent    CHECK (parent_id IS DISTINCT FROM id)
 );
--- Sin códigos repetidos entre hermanos ni entre comunidades raíz
-CREATE UNIQUE INDEX unit_sibling_code_uq ON units.unit (parent_id, code) WHERE parent_id IS NOT NULL;
-CREATE UNIQUE INDEX unit_root_code_uq    ON units.unit (code)            WHERE parent_id IS NULL;
-CREATE INDEX unit_kind_idx ON units.unit (kind);
+-- Sin códigos repetidos entre hermanos vivos ni entre comunidades raíz vivas (una eliminada libera su código)
+CREATE UNIQUE INDEX unit_sibling_code_uq ON units.unit (parent_id, code) WHERE parent_id IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX unit_root_code_uq    ON units.unit (code)            WHERE parent_id IS NULL     AND deleted_at IS NULL;
+CREATE INDEX unit_parent_alive_idx ON units.unit (parent_id) WHERE deleted_at IS NULL;
+CREATE INDEX unit_kind_alive_idx   ON units.unit (kind)      WHERE deleted_at IS NULL;
 
 CREATE TRIGGER unit_updated_at BEFORE UPDATE ON units.unit
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();

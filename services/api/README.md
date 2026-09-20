@@ -46,10 +46,14 @@ Toda respuesta sale con el mismo envoltorio. El cliente puede enviar `x-request-
 | GET    | `/users/:id`           | Usuario con sus contratos y las unidades de cada uno |
 | POST   | `/users`               | Crea usuario (`email`, `fullName`, `phone?`, `externalAuthId?`) |
 | PATCH  | `/users/:id`           | Modifica lo que venga (`email`, `fullName`, `phone`, `externalAuthId`, `isActive`) |
-| GET    | `/units?parentId=`     | Sin `parentId`, las comunidades raíz; con él, los hijos directos |
+| GET    | `/units?parentId=`     | Sin `parentId`, las comunidades raíz vivas; con él, los hijos directos vivos |
 | GET    | `/units/:id`           | Una unidad |
-| GET    | `/units/:id/tree`      | La unidad con su subárbol anidado (`children`) |
+| GET    | `/units/:id/tree`      | La unidad con su subárbol anidado (`children`); `?includeDeleted=true` incluye las eliminadas |
 | POST   | `/units`               | Crea unidad (`kind`, `code`, `parentId?`, `name?`) |
 | PATCH  | `/units/:id`           | Modifica lo que venga; cambiar `parentId` mueve la unidad con su subárbol |
+| DELETE | `/units/:id`           | Borrado lógico de la unidad y su subárbol (`deleted_at`); responde `{ deleted: n }` |
+| POST   | `/units/:id/restore`   | Revierte el borrado lógico de la unidad y de lo que se eliminó con ella |
 
-Reglas que aplica la API (no la base): `community` es la única raíz y el resto necesita `parentId`; el padre debe existir; no se puede mover una unidad bajo sí misma ni bajo su subárbol; el código no se repite entre hermanos (409). No hay borrado: se usa `isActive`.
+Reglas que aplica la API (no la base): `community` es la única raíz y el resto necesita `parentId`; el padre debe existir y estar vivo; no se puede mover una unidad bajo sí misma ni bajo su subárbol; el código no se repite entre hermanos vivos (409).
+
+Borrado lógico de unidades: nunca se borra físicamente. Una unidad eliminada desaparece de listas, árbol, `GET /units/:id`, `PATCH` y métricas, y libera su código. Restaurar exige que el padre esté vivo (se restaura de arriba hacia abajo) y que el código siga libre; trae consigo las unidades que se eliminaron en la misma operación. Usuarios: no hay borrado, se usa `isActive`.

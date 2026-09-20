@@ -2,6 +2,10 @@
   <ui-section-header heading="Unidades" subtitle="Comunidades, edificios, departamentos y cuentas" />
 
   <div class="unit-tree__toolbar">
+    <label class="ui-checkbox">
+      <input type="checkbox" [checked]="showDeleted()" (change)="onShowDeletedChange($event)" />
+      Mostrar eliminadas
+    </label>
     <ui-button (clicked)="newParent.set(null)">+ Nueva comunidad</ui-button>
   </div>
 
@@ -17,6 +21,24 @@
     }
   </ui-dialog>
 
+  <ui-dialog [open]="removing() !== null" (openChange)="$event || removing.set(null)">
+    @if (removing(); as unit) {
+      <ui-card heading="Eliminar unidad" [actions]="removeActions()" (action)="onRemoveAction($event)">
+        <p>Vas a eliminar <strong>{{ unitLabel(unit) }}</strong> ({{ kindLabels[unit.kind] }}).</p>
+        @if (removingCount() === 2) {
+          <p>Se elimina también la unidad que cuelga de ella.</p>
+        } @else if (removingCount() > 2) {
+          <p>Se eliminan también las <strong>{{ removingCount() - 1 }}</strong> unidades que cuelgan de ella.</p>
+        }
+        <p class="ui-muted">Es un borrado lógico: la unidad y sus contratos se conservan y puedes restaurarla desde "Mostrar eliminadas".</p>
+      </ui-card>
+    }
+  </ui-dialog>
+
+  @if (actionError(); as error) {
+    <p class="ui-form__error">{{ error }}</p>
+  }
+
   @if (failed()) {
     <p class="ui-form__error">No se pudieron cargar las unidades.</p>
   } @else if (trees(); as trees) {
@@ -25,7 +47,7 @@
     } @else {
       <div class="unit-tree__list">
         @for (tree of trees; track tree.id) {
-          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" />
+          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="removing.set($event)" (restore)="onRestore($event)" />
         }
       </div>
     }

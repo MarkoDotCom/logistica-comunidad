@@ -74,4 +74,4 @@ Borrado lógico de unidades: nunca se borra físicamente. Una unidad eliminada d
 
 Contratos: el tipo debe corresponder al tipo de unidad (comunidad: administración y empleo; edificio: empleo; departamento: propiedad y arriendo; cuenta: ninguno), la persona debe existir y el término no puede ser anterior al inicio. No hay borrado de contratos.
 
-Roles: globales, nombre único entre vivos (409), permisos del catálogo (400 si alguno no existe). Los roles del sistema (`isSystem`, Administrador) cambian de permisos y descripción pero no se renombran ni eliminan. Los permisos se gestionan pero todavía no se aplican: no hay autenticación.
+Roles: globales, nombre único entre vivos (409), permisos del catálogo (400 si alguno no existe). Los roles del sistema (`isSystem`, `admin`) cambian de permisos y descripción pero no se renombran ni eliminan. Los permisos se gestionan pero todavía no se aplican: no hay autenticación.

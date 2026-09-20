@@ -49,24 +49,67 @@ INSERT INTO users.contract (id, unit_id, user_id, type, starts_at, ends_at) VALU
   ('60000000-0000-4000-8000-000000000006', '30000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000004', 'lease',          '2026-01-01', '2026-12-31'),
   ('60000000-0000-4000-8000-000000000007', '20000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000005', 'employment',     '2023-05-01', NULL);
 
--- Roles de ejemplo (el Administrador viene en schema.sql) ------------------
+-- Roles (admin viene en schema.sql) ------------------------------------------
+-- Permisos por rol. Los ajusta el admin desde Roles; esto es el punto de partida.
 INSERT INTO auth.role (id, name, description) VALUES
-  ('70000000-0000-4000-8000-000000000002', 'Conserje',  'Ve unidades, contratos y usuarios; no modifica'),
-  ('70000000-0000-4000-8000-000000000003', 'Residente', 'Ve sus unidades y contratos');
+  ('70000000-0000-4000-8000-000000000002', 'administrador-comunitario', 'Administra una comunidad: unidades, contratos y personas'),
+  ('70000000-0000-4000-8000-000000000003', 'anfitrion',                 'Residente que recibe visitas y gestiona lo suyo'),
+  ('70000000-0000-4000-8000-000000000004', 'residente',                 'Vive en la comunidad; ve sus unidades y contratos'),
+  ('70000000-0000-4000-8000-000000000005', 'propietario',               'Dueño de unidades; ve sus unidades, contratos y personas'),
+  ('70000000-0000-4000-8000-000000000006', 'servicio-externo',          'Personal y proveedores: ve las unidades donde trabaja'),
+  ('70000000-0000-4000-8000-000000000007', 'visita',                    'Acceso puntual; sin permisos propios'),
+  ('70000000-0000-4000-8000-000000000008', 'read-only',                 'Solo lectura de toda la aplicación');
+
 INSERT INTO auth.role_permission (role_id, permission_key) VALUES
+  -- administrador-comunitario: todo salvo gestionar roles
   ('70000000-0000-4000-8000-000000000002', 'summary.read'),
   ('70000000-0000-4000-8000-000000000002', 'units.read'),
+  ('70000000-0000-4000-8000-000000000002', 'units.write'),
+  ('70000000-0000-4000-8000-000000000002', 'units.delete'),
   ('70000000-0000-4000-8000-000000000002', 'contracts.read'),
+  ('70000000-0000-4000-8000-000000000002', 'contracts.write'),
   ('70000000-0000-4000-8000-000000000002', 'users.read'),
+  ('70000000-0000-4000-8000-000000000002', 'users.write'),
+  ('70000000-0000-4000-8000-000000000002', 'roles.read'),
+  -- anfitrion
   ('70000000-0000-4000-8000-000000000003', 'units.read'),
-  ('70000000-0000-4000-8000-000000000003', 'contracts.read');
+  ('70000000-0000-4000-8000-000000000003', 'contracts.read'),
+  ('70000000-0000-4000-8000-000000000003', 'users.read'),
+  -- residente
+  ('70000000-0000-4000-8000-000000000004', 'units.read'),
+  ('70000000-0000-4000-8000-000000000004', 'contracts.read'),
+  -- propietario
+  ('70000000-0000-4000-8000-000000000005', 'units.read'),
+  ('70000000-0000-4000-8000-000000000005', 'contracts.read'),
+  ('70000000-0000-4000-8000-000000000005', 'users.read'),
+  -- servicio-externo
+  ('70000000-0000-4000-8000-000000000006', 'units.read'),
+  -- visita: sin permisos
+  -- read-only: todos los .read
+  ('70000000-0000-4000-8000-000000000008', 'summary.read'),
+  ('70000000-0000-4000-8000-000000000008', 'units.read'),
+  ('70000000-0000-4000-8000-000000000008', 'contracts.read'),
+  ('70000000-0000-4000-8000-000000000008', 'users.read'),
+  ('70000000-0000-4000-8000-000000000008', 'roles.read');
 
--- Asignación: Marcela administra; Diego es conserje; Ana, Bruno y Carla residentes
+-- Una persona por rol para probar ------------------------------------------
+INSERT INTO users.app_user (id, email, external_auth_id, full_name, phone) VALUES
+  ('50000000-0000-4000-8000-000000000006', 'pedro.lagos@example.com',   'auth|pedro',  'Pedro Lagos',   '+56 9 6666 6666'),
+  ('50000000-0000-4000-8000-000000000007', 'lucia.vera@example.com',    'auth|lucia',  'Lucía Vera',    NULL),
+  ('50000000-0000-4000-8000-000000000008', 'sofia.diaz@example.com',    'auth|sofia',  'Sofía Díaz',    NULL),
+  ('50000000-0000-4000-8000-000000000009', 'tomas.ibanez@example.com',  'auth|tomas',  'Tomás Ibáñez',  NULL);
+
+-- Asignación: Marcela admin; Pedro administrador-comunitario; Lucía anfitriona; Carla residente;
+-- Ana y Bruno propietarios; Diego servicio-externo; Sofía visita; Tomás read-only
 INSERT INTO auth.user_role (user_id, role_id) VALUES
   ('50000000-0000-4000-8000-000000000001', '70000000-0000-4000-8000-000000000001'),
-  ('50000000-0000-4000-8000-000000000005', '70000000-0000-4000-8000-000000000002'),
-  ('50000000-0000-4000-8000-000000000002', '70000000-0000-4000-8000-000000000003'),
-  ('50000000-0000-4000-8000-000000000003', '70000000-0000-4000-8000-000000000003'),
-  ('50000000-0000-4000-8000-000000000004', '70000000-0000-4000-8000-000000000003');
+  ('50000000-0000-4000-8000-000000000006', '70000000-0000-4000-8000-000000000002'),
+  ('50000000-0000-4000-8000-000000000007', '70000000-0000-4000-8000-000000000003'),
+  ('50000000-0000-4000-8000-000000000004', '70000000-0000-4000-8000-000000000004'),
+  ('50000000-0000-4000-8000-000000000002', '70000000-0000-4000-8000-000000000005'),
+  ('50000000-0000-4000-8000-000000000003', '70000000-0000-4000-8000-000000000005'),
+  ('50000000-0000-4000-8000-000000000005', '70000000-0000-4000-8000-000000000006'),
+  ('50000000-0000-4000-8000-000000000008', '70000000-0000-4000-8000-000000000007'),
+  ('50000000-0000-4000-8000-000000000009', '70000000-0000-4000-8000-000000000008');
 
 COMMIT;

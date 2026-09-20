@@ -34,7 +34,7 @@ describe('Roles (e2e)', () => {
     expect(perms.body.data).toEqual(expect.arrayContaining([expect.objectContaining({ key: 'units.write', resource: 'units', action: 'write' })]));
     const roles = await request(app.getHttpServer()).get('/roles').expect(200);
     const admin = roles.body.data.find((r: { id: string }) => r.id === ADMIN_ROLE);
-    expect(admin).toMatchObject({ name: 'Administrador', isSystem: true, permissionCount: perms.body.data.length });
+    expect(admin).toMatchObject({ name: 'admin', isSystem: true, permissionCount: perms.body.data.length });
     expect(admin.userCount).toBeGreaterThanOrEqual(1);
   });
 
@@ -80,6 +80,6 @@ describe('Roles (e2e)', () => {
     await request(app.getHttpServer()).patch(`/users/${MARCELA}`).send({ roleIds: ['00000000-0000-4000-8000-000000000000'] }).expect(400);
     await request(app.getHttpServer()).patch(`/users/${MARCELA}`).send({ roleIds: before }).expect(200);
     const users = await request(app.getHttpServer()).get('/users').expect(200);
-    expect(users.body.data.find((u: { id: string }) => u.id === MARCELA).roles).toEqual([expect.objectContaining({ name: 'Administrador' })]);
+    expect(users.body.data.find((u: { id: string }) => u.id === MARCELA).roles).toEqual([expect.objectContaining({ name: 'admin' })]);
   });
 });

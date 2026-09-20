@@ -14,7 +14,7 @@ community (comunidad)            ← administration, employment
 | Archivo      | Contenido                                                             |
 |--------------|-----------------------------------------------------------------------|
 | `schema.sql` | Esquemas `units`, `users` y `auth`, enums, tablas, índices parciales, triggers, catálogo de permisos y rol Administrador |
-| `seed.sql`   | Datos de ejemplo: 1 comunidad, 2 edificios, 4 departamentos, 4 cuentas, 5 usuarios, 7 contratos, roles Conserje y Residente y su asignación |
+| `seed.sql`   | Datos de ejemplo: 1 comunidad, 2 edificios, 4 departamentos, 4 cuentas, 9 usuarios, 7 contratos, 7 roles además de admin y una persona por rol |
 | `modelo.mmd` | Diagrama ER en Mermaid                                                |
 
 Con Docker (desde `proyectos/logistica-comunidad/`, credenciales en `.env`):
@@ -97,9 +97,22 @@ erDiagram
 | Tabla             | Descripción |
 |-------------------|-------------|
 | `permission`      | Catálogo fijo de acciones del código, `recurso.accion` (`units.write`). Lo carga `schema.sql`; el admin no lo edita. |
-| `role`            | Rol global de la aplicación con nombre único entre vivos y borrado lógico. `is_system` marca los base (Administrador): no se eliminan ni renombran, sí cambian de permisos. |
+| `role`            | Rol global de la aplicación con nombre único entre vivos y borrado lógico. `is_system` marca los base (`admin`): no se eliminan ni renombran, sí cambian de permisos. |
 | `role_permission` | Permisos de cada rol. |
 | `user_role`       | Roles de cada usuario. Los roles son globales; qué administra cada persona sobre cada unidad lo dicen los contratos. |
+
+Roles del seed y sus permisos de partida (se ajustan desde el admin):
+
+| Rol | Permisos |
+|---|---|
+| `admin` (sistema) | Todos |
+| `administrador-comunitario` | Todo salvo `roles.write` |
+| `anfitrion` | `units.read`, `contracts.read`, `users.read` |
+| `residente` | `units.read`, `contracts.read` |
+| `propietario` | `units.read`, `contracts.read`, `users.read` |
+| `servicio-externo` | `units.read` |
+| `visita` | Ninguno |
+| `read-only` | Todos los `.read` |
 
 ## Reglas
 

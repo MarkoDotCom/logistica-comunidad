@@ -186,6 +186,6 @@ CREATE INDEX user_role_role_idx ON auth.user_role (role_id);
 
 -- Rol base con todos los permisos; existe siempre
 INSERT INTO auth.role (id, name, description, is_system) VALUES
-  ('70000000-0000-4000-8000-000000000001', 'Administrador', 'Acceso completo a la aplicación', true);
+  ('70000000-0000-4000-8000-000000000001', 'admin', 'Acceso completo a la aplicación', true);
 INSERT INTO auth.role_permission (role_id, permission_key)
   SELECT '70000000-0000-4000-8000-000000000001', key FROM auth.permission;

@@ -1,0 +1,10 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Modelos pendientes: se obtienen de database/schema.sql con `npx prisma db pull`.

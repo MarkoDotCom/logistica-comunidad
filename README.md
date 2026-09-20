@@ -4,7 +4,7 @@ Solución de gestión logística para una comunidad de vivienda. Misma estructur
 
 | Directorio       | Descripción                              | Stack previsto            |
 |------------------|------------------------------------------|---------------------------|
-| `client/`        | Aplicación web                           | Angular                   |
+| `client/`        | Aplicación web                           | Angular 21                |
 | `services/api/`  | API                                      | NestJS + Prisma           |
 | `database/`      | Esquema SQL, seed y diagrama ER          | PostgreSQL 16             |
 | `landing/`       | Landing pública                          | Vite                      |
@@ -18,4 +18,4 @@ docker compose up          # api :3001, client :4201, landing :4301
 
 ## Estado
 
-Esqueleto creado. Pendiente: generar las apps (`ng new`, `nest new`, `npm create vite`), definir el modelo de datos y el alcance.
+Apps generadas (Angular 21 zoneless + SCSS, NestJS 12 + Prisma 7 con adaptador pg, Vite 8 + Sass). Pendiente: definir el modelo de datos en `database/` y el alcance funcional. Requiere `npm install` en `client/`, `services/api/` y `landing/`.

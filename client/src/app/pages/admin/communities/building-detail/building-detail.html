@@ -12,7 +12,7 @@
 
     <section class="detail__section">
       <h3 class="detail__title">Contratos sobre el edificio</h3>
-      <app-unit-contracts [contracts]="unit.contracts" />
+      <app-unit-contracts [unit]="unit" [contracts]="unit.contracts" (changed)="reload()" />
     </section>
   } @else {
     <p class="ui-muted">Cargando…</p>

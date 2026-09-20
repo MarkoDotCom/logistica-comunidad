@@ -1,3 +1,21 @@
+@if (canCreate()) {
+  <div class="unit-contracts__toolbar">
+    <ui-button (clicked)="newOpen.set(true)">+ Nuevo contrato</ui-button>
+  </div>
+}
+
+<ui-dialog [open]="newOpen()" (openChange)="$event || onDialogClose()">
+  @if (newOpen()) {
+    <app-contract-wizard [unit]="unit()" (closed)="onDialogClose()" />
+  }
+</ui-dialog>
+
+<ui-dialog [open]="editing() !== null" (openChange)="$event || onDialogClose()">
+  @if (editing(); as contract) {
+    <app-contract-wizard [unit]="unit()" [contract]="contract" (closed)="onDialogClose()" />
+  }
+</ui-dialog>
+
 @if (contracts().length === 0) {
   <p class="ui-muted">No hay contratos sobre esta unidad.</p>
 } @else {
@@ -11,6 +29,7 @@
           <th>Desde</th>
           <th>Hasta</th>
           <th>Estado</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -27,6 +46,9 @@
               } @else {
                 <span class="ui-muted">{{ statusLabels[status(c)] }}</span>
               }
+            </td>
+            <td class="ui-table__actions">
+              <ui-button variant="secondary" (clicked)="editing.set(c)">Modificar</ui-button>
             </td>
           </tr>
         }

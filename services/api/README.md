@@ -19,6 +19,7 @@ src/
 │   └── prisma/schema.prisma   # se regenera desde la base con `npx prisma db pull`
 └── rest/                # endpoints HTTP; inyecta las tablas, nunca Prisma
     ├── api-response.*   # envoltorio único de respuestas (éxito y error)
+    ├── contracts/
     ├── health/
     ├── summary/
     ├── users/
@@ -54,7 +55,12 @@ Toda respuesta sale con el mismo envoltorio. El cliente puede enviar `x-request-
 | PATCH  | `/units/:id`           | Modifica lo que venga; cambiar `parentId` mueve la unidad con su subárbol |
 | DELETE | `/units/:id`           | Borrado lógico de la unidad y su subárbol (`deleted_at`); responde `{ deleted: n }` |
 | POST   | `/units/:id/restore`   | Revierte el borrado lógico de la unidad y de lo que se eliminó con ella |
+| POST   | `/units/:id/contracts` | Crea un contrato sobre la unidad (`userId`, `type`, `startsAt`, `endsAt?`, `documentUrl?`, `notes?`) |
+| GET    | `/contracts/:id`       | Un contrato con su persona |
+| PATCH  | `/contracts/:id`       | Modifica lo que venga; `endsAt: null` deja el contrato sin término |
 
 Reglas que aplica la API: `community` es la única raíz y el resto necesita `parentId`; el padre debe existir y estar vivo; no se puede mover una unidad bajo sí misma ni bajo su subárbol; el código no se repite entre hermanos vivos (409). Orden de la jerarquía (también en la base, trigger `unit_check_rank`): comunidad > edificio > departamento > cuenta; una unidad solo cuelga de otra de rango superior, se pueden saltar niveles, y no se puede cambiar el tipo de una unidad si le quedan hijos de su mismo rango o superior (400 con el motivo).
 
 Borrado lógico de unidades: nunca se borra físicamente. Una unidad eliminada desaparece de listas, árbol, `GET /units/:id`, `PATCH` y métricas, y libera su código. Restaurar exige que el padre esté vivo (se restaura de arriba hacia abajo) y que el código siga libre; trae consigo las unidades que se eliminaron en la misma operación. Usuarios: no hay borrado, se usa `isActive`.
+
+Contratos: el tipo debe corresponder al tipo de unidad (comunidad: administración y empleo; edificio: empleo; departamento: propiedad y arriendo; cuenta: ninguno), la persona debe existir y el término no puede ser anterior al inicio. No hay borrado de contratos.

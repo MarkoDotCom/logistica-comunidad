@@ -1,0 +1,111 @@
+<div class="wizard">
+  @if (saved(); as saved) {
+    <ui-card [heading]="isEdit() ? 'Contrato actualizado' : 'Contrato creado'" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name"><ui-tag>{{ typeLabels[saved.type] }}</ui-tag> {{ saved.user.fullName }}</p>
+      <p class="ui-muted">{{ unitLabel(unit()) }} · desde {{ saved.startsAt }}{{ saved.endsAt ? ' hasta ' + saved.endsAt : ', sin término' }}</p>
+    </ui-card>
+  } @else {
+    <ui-card [heading]="isEdit() ? 'Modificar contrato' : 'Nuevo contrato'" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
+      <form [formGroup]="form">
+        @switch (step()) {
+          @case (0) {
+            @if (isEdit()) {
+              <p>Vas a modificar el contrato de <strong>{{ contract()!.user.fullName }}</strong> sobre <strong>{{ unitLabel(unit()) }}</strong>.</p>
+            } @else {
+              <p>Vas a crear un contrato sobre <strong>{{ unitLabel(unit()) }}</strong> ({{ kindLabels[unit().kind] }}).</p>
+            }
+            <ol class="wizard__intro">
+              <li><strong>Persona:</strong> quién firma, buscando entre los usuarios.</li>
+              <li><strong>Datos:</strong> tipo, fechas, documento y notas.</li>
+              <li><strong>Confirmar:</strong> revisas y se guarda.</li>
+            </ol>
+            @if (types().length === 0) {
+              <p class="ui-form__error">Una {{ kindLabels[unit().kind].toLowerCase() }} no admite contratos.</p>
+            } @else {
+              <p class="ui-muted">Tipos posibles aquí: {{ types().map((t) => typeLabels[t].toLowerCase()).join(', ') }}.</p>
+            }
+          }
+          @case (1) {
+            @if (selected(); as person) {
+              <p class="contract-wizard__selected">
+                <strong>{{ person.fullName }}</strong> <span class="ui-muted">{{ person.email }}</span>
+              </p>
+            } @else {
+              <p class="ui-muted">Todavía no has elegido a nadie.</p>
+            }
+            <label class="ui-field">
+              <span class="ui-field__label">Buscar persona</span>
+              <input class="ui-input" type="search" placeholder="Nombre o email (mínimo 2 letras)" autocomplete="off" (input)="onSearch($event)" />
+            </label>
+            @if (results().length) {
+              <ul class="contract-wizard__results">
+                @for (user of results(); track user.id) {
+                  <li>
+                    <button type="button" class="contract-wizard__result" [class.contract-wizard__result--active]="selected()?.id === user.id" (click)="select(user)">
+                      <span>{{ user.fullName }}</span>
+                      <span class="ui-muted">{{ user.email }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
+            <p class="ui-muted">Si la persona no existe, créala primero en Usuarios.</p>
+          }
+          @case (2) {
+            <label class="ui-field">
+              <span class="ui-field__label">Tipo</span>
+              <select class="ui-select" formControlName="type">
+                @for (type of types(); track type) {
+                  <option [value]="type">{{ typeLabels[type] }}</option>
+                }
+              </select>
+            </label>
+            <div class="contract-wizard__dates">
+              <label class="ui-field">
+                <span class="ui-field__label">Inicio</span>
+                <input class="ui-input" type="date" formControlName="startsAt" />
+              </label>
+              <label class="ui-field">
+                <span class="ui-field__label">Término (opcional)</span>
+                <input class="ui-input" type="date" formControlName="endsAt" />
+              </label>
+            </div>
+            @if (value().startsAt && !datesOk()) {
+              <p class="ui-form__error">El término no puede ser anterior al inicio.</p>
+            }
+            <label class="ui-field">
+              <span class="ui-field__label">Documento (URL, opcional)</span>
+              <input class="ui-input" type="url" formControlName="documentUrl" placeholder="https://…" />
+            </label>
+            <label class="ui-field">
+              <span class="ui-field__label">Notas (opcional)</span>
+              <textarea class="ui-textarea" formControlName="notes"></textarea>
+            </label>
+          }
+          @case (3) {
+            <dl class="wizard__summary">
+              <dt>Unidad</dt>
+              <dd>{{ unitLabel(unit()) }}</dd>
+              <dt>Persona</dt>
+              <dd>{{ selected()?.fullName }} <span class="ui-muted">{{ selected()?.email }}</span></dd>
+              <dt>Tipo</dt>
+              <dd>{{ typeLabel() }}</dd>
+              <dt>Inicio</dt>
+              <dd>{{ value().startsAt }}</dd>
+              <dt>Término</dt>
+              <dd>{{ value().endsAt || 'Sin término' }}</dd>
+              <dt>Documento</dt>
+              <dd>{{ value().documentUrl || '—' }}</dd>
+              <dt>Notas</dt>
+              <dd>{{ value().notes || '—' }}</dd>
+            </dl>
+            @if (error(); as error) {
+              <p class="ui-form__error">{{ error }}</p>
+            }
+          }
+        }
+      </form>
+    </ui-card>
+  }
+</div>

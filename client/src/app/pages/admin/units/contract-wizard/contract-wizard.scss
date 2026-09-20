@@ -1,0 +1,47 @@
+@use '../../wizard';
+
+.contract-wizard__selected {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ui-color-border);
+  border-radius: 0.5rem;
+  background-color: var(--ui-color-accent-bg);
+}
+
+.contract-wizard__results {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.contract-wizard__result {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ui-color-border);
+  border-radius: 0.5rem;
+  background-color: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--ui-color-hover);
+  }
+
+  &--active {
+    border-color: var(--ui-color-primary);
+    background-color: var(--ui-color-accent-bg);
+  }
+}
+
+.contract-wizard__dates {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0 1rem;
+}

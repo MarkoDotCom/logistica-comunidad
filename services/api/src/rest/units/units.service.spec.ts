@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ContractTable } from '../../database/tables/contract.table.js';
 import { UnitTable } from '../../database/tables/unit.table.js';
 import { buildTree, UnitsService } from './units.service.js';
 
@@ -6,8 +7,10 @@ const community = { id: 'c', parentId: null, kind: 'community' as const, code: '
 const towerA = { id: 'a', parentId: 'c', kind: 'building' as const, code: 'A', name: 'Torre A', deletedAt: null };
 const apt101 = { id: 'a101', parentId: 'a', kind: 'apartment' as const, code: '101', name: null, deletedAt: null };
 
-async function serviceWith(table: Partial<Record<keyof UnitTable, unknown>>): Promise<UnitsService> {
-  const moduleRef = await Test.createTestingModule({ providers: [UnitsService, { provide: UnitTable, useValue: table }] }).compile();
+async function serviceWith(table: Partial<Record<keyof UnitTable, unknown>>, contracts: Partial<Record<keyof ContractTable, unknown>> = {}): Promise<UnitsService> {
+  const moduleRef = await Test.createTestingModule({
+    providers: [UnitsService, { provide: UnitTable, useValue: table }, { provide: ContractTable, useValue: contracts }],
+  }).compile();
   return moduleRef.get(UnitsService);
 }
 
@@ -105,8 +108,8 @@ describe('UnitsService: detalle', () => {
     const find = vi.fn().mockResolvedValue(apt101);
     const ancestors = vi.fn().mockResolvedValue([community, towerA]);
     const listChildren = vi.fn().mockResolvedValue([{ id: 'gc', parentId: 'a101', kind: 'account', code: 'GC', name: null, deletedAt: null, childrenCount: 0 }]);
-    const contracts = vi.fn().mockResolvedValue([{ id: 'k1', type: 'ownership', startsAt: '2019-06-15', endsAt: null, user: { id: 'u1', fullName: 'Ana', email: 'ana@example.com' } }]);
-    const service = await serviceWith({ find, ancestors, listChildren, contracts });
+    const listByUnit = vi.fn().mockResolvedValue([{ id: 'k1', type: 'ownership', startsAt: '2019-06-15', endsAt: null, user: { id: 'u1', fullName: 'Ana', email: 'ana@example.com' } }]);
+    const service = await serviceWith({ find, ancestors, listChildren }, { listByUnit });
 
     const detail = await service.findDetail('a101');
     expect(detail).toMatchObject({ id: 'a101', ancestors: [community, towerA], children: [{ code: 'GC', childrenCount: 0 }], contracts: [{ type: 'ownership' }] });

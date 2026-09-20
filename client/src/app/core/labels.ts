@@ -1,4 +1,5 @@
 import type { ContractType } from './users.api';
+import { CONTRACT_TYPES } from './users.api';
 import { UNIT_KINDS, type UnitKind } from './units.api';
 
 export const UNIT_KIND_LABELS: Record<UnitKind, string> = {
@@ -64,6 +65,18 @@ export function unitLabel(unit: { kind: UnitKind; code: string; name: string | n
 export function apiErrorMessage(e: { error?: { message?: string | string[] } }, fallback: string): string {
   const message = e.error?.message;
   return Array.isArray(message) ? message.join('. ') : (message ?? fallback);
+}
+
+// Espejo de contract-rules.ts en la API: qué tipos de contrato admite cada tipo de unidad
+export const CONTRACT_TYPES_BY_KIND: Record<UnitKind, ContractType[]> = {
+  community: ['administration', 'employment'],
+  building: ['employment'],
+  apartment: ['ownership', 'lease'],
+  account: [],
+};
+
+export function allowedContractTypes(kind: UnitKind): ContractType[] {
+  return CONTRACT_TYPES.filter((t) => CONTRACT_TYPES_BY_KIND[kind].includes(t));
 }
 
 export type ContractStatus = 'current' | 'expired' | 'upcoming';

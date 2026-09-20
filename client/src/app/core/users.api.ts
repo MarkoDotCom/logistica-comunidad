@@ -6,6 +6,7 @@ import type { UnitKind } from './units.api';
 
 // Misma forma que devuelve services/api en /users
 export type ContractType = 'ownership' | 'lease' | 'administration' | 'employment';
+export const CONTRACT_TYPES: ContractType[] = ['ownership', 'lease', 'administration', 'employment'];
 
 export interface UserSummary {
   id: string;

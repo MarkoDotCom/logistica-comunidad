@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { contract_type, unit_kind } from '../generated/enums.js';
-import { toIsoDate } from '../dates.js';
+import type { unit_kind } from '../generated/enums.js';
 import { PrismaService } from '../prisma.service.js';
 
 export interface UnitDto {
@@ -15,15 +14,6 @@ export interface UnitDto {
 // Fila de un listado por nivel: cuántos hijos vivos tiene
 export interface UnitSummary extends UnitDto {
   childrenCount: number;
-}
-
-// Contrato visto desde la unidad: quién y en qué calidad
-export interface UnitContractDto {
-  id: string;
-  type: contract_type;
-  startsAt: string;
-  endsAt: string | null;
-  user: { id: string; fullName: string; email: string };
 }
 
 export interface NewUnit {
@@ -68,42 +58,6 @@ export class UnitTable {
     return rows.map((row) => ({ ...toUnit(row), childrenCount: row._count.children }));
   }
 
-  /** Ancestros de una unidad, de la raíz hacia el padre directo (vivos o no). */
-  async ancestors(id: string): Promise<UnitDto[]> {
-    const rows = await this.prisma.$queryRaw<Row[]>`
-      WITH RECURSIVE up AS (
-        SELECT u.id, u.parent_id, u.kind, u.code, u.name, u.deleted_at, 0 AS depth
-        FROM units.unit u WHERE u.id = (SELECT parent_id FROM units.unit WHERE id = ${id}::uuid)
-        UNION ALL
-        SELECT u.id, u.parent_id, u.kind, u.code, u.name, u.deleted_at, up.depth + 1
-        FROM units.unit u JOIN up ON u.id = up.parent_id
-      )
-      SELECT id, parent_id, kind, code, name, deleted_at FROM up ORDER BY depth DESC`;
-    return rows.map(toUnit);
-  }
-
-  /** Tipos distintos de los hijos directos (vivos o eliminados). */
-  async childKinds(id: string): Promise<unit_kind[]> {
-    const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { parent_id: id } });
-    return groups.map((g) => g.kind);
-  }
-
-  /** Contratos de la unidad con la persona de cada uno, del más reciente al más antiguo. */
-  async contracts(unitId: string): Promise<UnitContractDto[]> {
-    const rows = await this.prisma.contract.findMany({
-      where: { unit_id: unitId },
-      select: { id: true, type: true, starts_at: true, ends_at: true, user: { select: { id: true, full_name: true, email: true } } },
-      orderBy: { starts_at: 'desc' },
-    });
-    return rows.map((c) => ({
-      id: c.id,
-      type: c.type,
-      startsAt: toIsoDate(c.starts_at),
-      endsAt: c.ends_at && toIsoDate(c.ends_at),
-      user: { id: c.user.id, fullName: c.user.full_name, email: c.user.email },
-    }));
-  }
-
   /** Unidades vivas por tipo. */
   async countByKind(): Promise<Record<unit_kind, number>> {
     const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { deleted_at: null }, _count: { _all: true } });
@@ -137,6 +91,26 @@ export class UnitTable {
       )
       SELECT id, parent_id, kind, code, name, deleted_at FROM tree ORDER BY depth, path`;
     return rows.map(toUnit);
+  }
+
+  /** Ancestros de una unidad, de la raíz hacia el padre directo (vivos o no). */
+  async ancestors(id: string): Promise<UnitDto[]> {
+    const rows = await this.prisma.$queryRaw<Row[]>`
+      WITH RECURSIVE up AS (
+        SELECT u.id, u.parent_id, u.kind, u.code, u.name, u.deleted_at, 0 AS depth
+        FROM units.unit u WHERE u.id = (SELECT parent_id FROM units.unit WHERE id = ${id}::uuid)
+        UNION ALL
+        SELECT u.id, u.parent_id, u.kind, u.code, u.name, u.deleted_at, up.depth + 1
+        FROM units.unit u JOIN up ON u.id = up.parent_id
+      )
+      SELECT id, parent_id, kind, code, name, deleted_at FROM up ORDER BY depth DESC`;
+    return rows.map(toUnit);
+  }
+
+  /** Tipos distintos de los hijos directos (vivos o eliminados). */
+  async childKinds(id: string): Promise<unit_kind[]> {
+    const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { parent_id: id } });
+    return groups.map((g) => g.kind);
   }
 
   /** ¿`candidateId` es `ancestorId` o cuelga de él (viva o eliminada)? Sirve para impedir ciclos al mover una unidad. */

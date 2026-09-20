@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { UnitTable, type UnitContractDto, type UnitDto, type UnitSummary } from '../../database/tables/unit.table.js';
+import { ContractTable, type ContractDto } from '../../database/tables/contract.table.js';
+import { UnitTable, type UnitDto, type UnitSummary } from '../../database/tables/unit.table.js';
 import { canNest } from '../../database/unit-rank.js';
 import { CreateUnitDto } from './dto/create-unit.dto.js';
 import { UpdateUnitDto } from './dto/update-unit.dto.js';
@@ -16,7 +17,7 @@ export interface UnitNode extends UnitDto {
 export interface UnitDetail extends UnitDto {
   ancestors: UnitDto[];
   children: UnitSummary[];
-  contracts: UnitContractDto[];
+  contracts: ContractDto[];
 }
 
 /** Arma el árbol a partir de la lista plana del subárbol (la raíz viene primero). */
@@ -30,7 +31,10 @@ export function buildTree(units: UnitDto[]): UnitNode {
 
 @Injectable()
 export class UnitsService {
-  constructor(private readonly units: UnitTable) {}
+  constructor(
+    private readonly units: UnitTable,
+    private readonly contracts: ContractTable,
+  ) {}
 
   /** Hijos directos de `parentId`; sin él, las comunidades raíz. Solo vivos salvo `includeDeleted`. */
   findChildren(parentId?: string, includeDeleted = false): Promise<UnitSummary[]> {
@@ -39,7 +43,7 @@ export class UnitsService {
 
   async findDetail(id: string): Promise<UnitDetail> {
     const unit = await this.findOne(id);
-    const [ancestors, children, contracts] = await Promise.all([this.units.ancestors(id), this.units.listChildren(id), this.units.contracts(id)]);
+    const [ancestors, children, contracts] = await Promise.all([this.units.ancestors(id), this.units.listChildren(id), this.contracts.listByUnit(id)]);
     return { ...unit, ancestors, children, contracts };
   }
 

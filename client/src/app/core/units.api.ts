@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import type { ContractType } from './users.api';
+import type { Contract } from './contracts.api';
 
 // Misma forma que devuelve services/api en /units
 export type UnitKind = 'community' | 'building' | 'apartment' | 'account';
@@ -27,13 +27,8 @@ export interface UnitNode extends Unit {
   children: UnitNode[];
 }
 
-export interface UnitContract {
-  id: string;
-  type: ContractType;
-  startsAt: string; // YYYY-MM-DD
-  endsAt: string | null;
-  user: { id: string; fullName: string; email: string };
-}
+// Los contratos del detalle son los mismos que devuelve /contracts
+export type UnitContract = Contract;
 
 // GET /units/:id/detail: la unidad, su ruta hasta la raíz, sus hijos vivos y sus contratos con persona
 export interface UnitDetail extends Unit {

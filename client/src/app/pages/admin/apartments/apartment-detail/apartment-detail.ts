@@ -37,6 +37,11 @@ export class ApartmentDetail {
     });
   }
 
+  /** Tras crear o modificar un contrato: vuelve a pedir el detalle. */
+  protected reload(): void {
+    this.load(this.id());
+  }
+
   private load(id: string): void {
     this.unit.set(null);
     this.failed.set(false);

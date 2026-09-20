@@ -13,9 +13,9 @@ const DETAIL: UnitDetail = {
   ],
   children: [{ id: 'gc', parentId: 'a101', kind: 'account', code: 'GC', name: 'Gastos comunes', deletedAt: null, childrenCount: 0 }],
   contracts: [
-    { id: 'k3', type: 'lease', startsAt: '2099-01-01', endsAt: null, user: { id: 'u9', fullName: 'Futura Persona', email: 'f@example.com' } },
-    { id: 'k2', type: 'lease', startsAt: '2020-01-01', endsAt: '2020-12-31', user: { id: 'u4', fullName: 'Carla Muñoz', email: 'carla@example.com' } },
-    { id: 'k1', type: 'ownership', startsAt: '2019-06-15', endsAt: null, user: { id: 'u2', fullName: 'Ana Rojas', email: 'ana@example.com' } },
+    { id: 'k3', unitId: 'a101', type: 'lease', startsAt: '2099-01-01', endsAt: null, documentUrl: null, notes: null, user: { id: 'u9', fullName: 'Futura Persona', email: 'f@example.com' } },
+    { id: 'k2', unitId: 'a101', type: 'lease', startsAt: '2020-01-01', endsAt: '2020-12-31', documentUrl: null, notes: null, user: { id: 'u4', fullName: 'Carla Muñoz', email: 'carla@example.com' } },
+    { id: 'k1', unitId: 'a101', type: 'ownership', startsAt: '2019-06-15', endsAt: null, documentUrl: null, notes: null, user: { id: 'u2', fullName: 'Ana Rojas', email: 'ana@example.com' } },
   ],
 };
 
@@ -41,7 +41,7 @@ describe('ApartmentDetail', () => {
     expect(el.querySelector('app-unit-level .unit-level__toolbar button')?.textContent).toContain('Nueva cuenta');
     expect(el.querySelector('app-unit-level tbody')?.textContent).toContain('Gastos comunes');
 
-    const statuses = [...el.querySelectorAll('app-unit-contracts tbody tr td:last-child')].map((td) => td.textContent?.trim());
+    const statuses = [...el.querySelectorAll('app-unit-contracts tbody tr td:nth-child(6)')].map((td) => td.textContent?.trim());
     expect(statuses).toEqual(['Futuro', 'Vencido', 'Vigente']);
     http.verify();
   });

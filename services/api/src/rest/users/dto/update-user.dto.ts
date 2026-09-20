@@ -1,6 +1,6 @@
-import { IsBoolean, IsEmail, IsOptional, IsString, Length, MaxLength, ValidateIf } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsOptional, IsString, IsUUID, Length, MaxLength, ValidateIf } from 'class-validator';
 
-// Todos opcionales: solo se cambia lo que viene. Los contratos no se editan por aquí.
+// Todos opcionales: solo se cambia lo que viene. Los contratos no se editan por aquí; roleIds reemplaza el conjunto de roles.
 export class UpdateUserDto {
   @IsOptional()
   @IsEmail()
@@ -26,4 +26,9 @@ export class UpdateUserDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  roleIds?: string[];
 }

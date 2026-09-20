@@ -16,7 +16,7 @@ No hay página `/ux`; el punto 6 del checklist de la guía general no aplica.
 
 ## Patrones de página
 
-- **Dashboard**: todo bajo `pages/admin/`, con el layout `Admin` (Inicio · Comunidades · Árbol · Usuarios y `ui-theme-toggle`). Cada página empieza con `<main class="page">` y un `ui-section-header`; las de detalle llevan antes un `ui-breadcrumb` y sus secciones usan `pages/admin/detail.scss` (3rem entre secciones).
+- **Dashboard**: todo bajo `pages/admin/`, con el layout `Admin` (Inicio · Comunidades · Árbol · Usuarios · Roles y `ui-theme-toggle`). Cada página empieza con `<main class="page">` y un `ui-section-header`; las de detalle llevan antes un `ui-breadcrumb` y sus secciones usan `pages/admin/detail.scss` (3rem entre secciones).
 - **Navegación por niveles**: Comunidades → comunidad (edificios) → edificio (departamentos) → departamento (detalle). Cada nivel es un `app-unit-level` (tabla con alta, edición, eliminación lógica y restauración) parametrizado con el padre, el tipo hijo y la ruta de cada fila. Mover unidades solo se ofrece en el Árbol.
 - **Orden de la jerarquía** (comunidad > edificio > departamento > cuenta, con saltos permitidos): los wizards solo ofrecen tipos válidos (`allowedChildKinds`, `allowedKinds` en `core/labels.ts`), el Árbol solo ofrece como destino unidades de rango superior y las cuentas no muestran "+ Hijo". La API y la base aplican la misma regla; su mensaje se muestra tal cual si algo se escapa.
 - **Etiquetas**: enums de la API traducidos con `core/labels.ts` (`UNIT_KIND_LABELS`, `CONTRACT_TYPE_LABELS`, `CONTRACT_STATUS_LABELS`). `unitLabel()` da "Torre A" si hay nombre o "Departamento 101" si no.
@@ -32,5 +32,8 @@ Un wizard por funcionalidad, todos con la anatomía de la guía (`pages/admin/wi
 | `app-remove-unit` | Presentación, Confirmar | `finishVariant="danger"`; dice cuántas unidades se van con ella |
 | `app-restore-unit` | Presentación, Confirmar | Dice cuántas vuelven (mismo `deleted_at`) y los requisitos |
 | `app-contract-wizard` | Presentación, Persona, Datos, Confirmar | Alta y edición; buscador de usuarios; tipos limitados por unidad (`allowedContractTypes`) |
+| `app-role-wizard` | Presentación, Datos, Permisos, Confirmar | Alta y edición; permisos del catálogo agrupados por recurso (`groupPermissions`); un rol del sistema no cambia de nombre |
+| `app-remove-role`, `app-remove-role-user` | Presentación, Confirmar | `finishVariant="danger"` |
+| `app-add-role-user` | Presentación, Persona, Confirmar | Buscador de usuarios; resultado con *Agregar otra* y *Cerrar* |
 
-Las tablas (`app-unit-level`, `app-unit-contracts`, `app-user-list`) solo abren los wizards y recargan al cerrar. `app-unit-level` y el Árbol piden el subárbol antes de abrir eliminar o restaurar, para que el wizard pueda contar.
+Las tablas (`app-unit-level`, `app-unit-contracts`, `app-user-list`, `app-role-list`, `app-role-detail`) solo abren los wizards y recargan al cerrar. `app-edit-user` tiene un paso Roles con casillas; `roleIds` reemplaza el conjunto. `app-unit-level` y el Árbol piden el subárbol antes de abrir eliminar o restaurar, para que el wizard pueda contar.

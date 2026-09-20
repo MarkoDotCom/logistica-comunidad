@@ -1,11 +1,14 @@
 import { Test } from '@nestjs/testing';
 import { AppUserTable } from '../../database/tables/app-user.table.js';
+import { RoleTable } from '../../database/tables/role.table.js';
 import { UsersService } from './users.service.js';
 
-const ana = { id: 'u1', email: 'ana@example.com', externalAuthId: null, fullName: 'Ana Rojas', phone: null, isActive: true };
+const ana = { id: 'u1', email: 'ana@example.com', externalAuthId: null, fullName: 'Ana Rojas', phone: null, isActive: true, roles: [] };
 
-async function serviceWith(table: Partial<Record<keyof AppUserTable, unknown>>): Promise<UsersService> {
-  const moduleRef = await Test.createTestingModule({ providers: [UsersService, { provide: AppUserTable, useValue: table }] }).compile();
+async function serviceWith(table: Partial<Record<keyof AppUserTable, unknown>>, roles: Partial<Record<keyof RoleTable, unknown>> = {}): Promise<UsersService> {
+  const moduleRef = await Test.createTestingModule({
+    providers: [UsersService, { provide: AppUserTable, useValue: table }, { provide: RoleTable, useValue: roles }],
+  }).compile();
   return moduleRef.get(UsersService);
 }
 
@@ -44,5 +47,20 @@ describe('UsersService', () => {
 
     findWithContracts.mockResolvedValueOnce(null);
     await expect(service.update('nope', {})).rejects.toThrow('Usuario no encontrado');
+  });
+
+  it('replaces the roles when roleIds comes, after checking they exist', async () => {
+    const findWithContracts = vi.fn().mockResolvedValue({ ...ana, contracts: [] });
+    const setRoles = vi.fn().mockResolvedValue(undefined);
+    const update = vi.fn().mockResolvedValue({ ...ana, roles: [{ id: 'r1', name: 'Conserje' }], contracts: [] });
+    const allExist = vi.fn().mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const service = await serviceWith({ findWithContracts, setRoles, update }, { allExist });
+
+    await expect(service.update('u1', { roleIds: ['r1'], phone: null })).resolves.toMatchObject({ roles: [{ name: 'Conserje' }] });
+    expect(setRoles).toHaveBeenCalledWith('u1', ['r1']);
+    expect(update).toHaveBeenCalledWith('u1', { phone: null }); // roleIds no llega a la tabla de usuarios
+
+    await expect(service.update('u1', { roleIds: ['ghost'] })).rejects.toThrow('Alguno de los roles no existe');
+    expect(setRoles).toHaveBeenCalledTimes(1);
   });
 });

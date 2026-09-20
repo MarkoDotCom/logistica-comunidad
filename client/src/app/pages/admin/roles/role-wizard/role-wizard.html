@@ -1,0 +1,87 @@
+<div class="wizard">
+  @if (saved(); as saved) {
+    <ui-card [heading]="isEdit() ? 'Rol actualizado' : 'Rol creado'" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name">{{ saved.name }}</p>
+      <p class="ui-muted">{{ saved.permissionCount }} {{ saved.permissionCount === 1 ? 'permiso' : 'permisos' }} · {{ saved.userCount }} {{ saved.userCount === 1 ? 'persona' : 'personas' }}</p>
+    </ui-card>
+  } @else {
+    <ui-card [heading]="isEdit() ? 'Modificar rol' : 'Nuevo rol'" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
+      <form [formGroup]="form">
+        @switch (step()) {
+          @case (0) {
+            @if (role(); as role) {
+              <p>Vas a modificar el rol <strong>{{ role.name }}</strong>@if (role.isSystem) { (rol del sistema)}.</p>
+            } @else {
+              <p>Vas a crear un rol: un conjunto de permisos que después se asigna a personas.</p>
+            }
+            <ol class="wizard__intro">
+              <li><strong>Datos:</strong> nombre y descripción.</li>
+              <li><strong>Permisos:</strong> qué puede hacer quien tenga el rol, por recurso.</li>
+              <li><strong>Confirmar:</strong> revisas y se guarda.</li>
+            </ol>
+            @if (role()?.isSystem) {
+              <p class="ui-muted">Los roles del sistema cambian de permisos y descripción, pero no de nombre.</p>
+            }
+          }
+          @case (1) {
+            <label class="ui-field">
+              <span class="ui-field__label">Nombre</span>
+              <input class="ui-input" type="text" formControlName="name" placeholder="Conserje" />
+              @if (form.controls.name.touched && form.controls.name.invalid) {
+                <span class="ui-form__error">Entre 2 y 80 caracteres.</span>
+              }
+            </label>
+            <label class="ui-field">
+              <span class="ui-field__label">Descripción (opcional)</span>
+              <textarea class="ui-textarea" formControlName="description" placeholder="Qué hace quien tiene este rol"></textarea>
+            </label>
+          }
+          @case (2) {
+            @if (catalogFailed()) {
+              <p class="ui-form__error">No se pudo cargar el catálogo de permisos.</p>
+            } @else if (catalog()) {
+              @for (group of groups(); track group.resource) {
+                <fieldset class="role-wizard__group">
+                  <legend class="role-wizard__legend">{{ group.label }}</legend>
+                  @for (p of group.permissions; track p.key) {
+                    <label class="ui-checkbox role-wizard__permission">
+                      <input type="checkbox" [checked]="has(p.key)" (change)="onToggle(p.key, $event)" />
+                      <span>{{ permissionLabel(p.key) }} <span class="ui-muted">· {{ p.description }}</span></span>
+                    </label>
+                  }
+                </fieldset>
+              }
+              <p class="ui-muted">Un rol sin permisos es válido: sirve para agrupar personas.</p>
+            } @else {
+              <p class="ui-muted">Cargando…</p>
+            }
+          }
+          @case (3) {
+            <dl class="wizard__summary">
+              <dt>Nombre</dt>
+              <dd>{{ form.getRawValue().name }}</dd>
+              <dt>Descripción</dt>
+              <dd>{{ value().description || '—' }}</dd>
+              <dt>Permisos</dt>
+              <dd>
+                @if (selectedKeys().length === 0) {
+                  <span class="ui-muted">Ninguno</span>
+                } @else {
+                  <div class="ui-tags">
+                    @for (key of selectedKeys(); track key) {
+                      <ui-tag>{{ permissionLabel(key) }}</ui-tag>
+                    }
+                  </div>
+                }
+              </dd>
+            </dl>
+            @if (error(); as error) {
+              <p class="ui-form__error">{{ error }}</p>
+            }
+          }
+        }
+      </form>
+    </ui-card>
+  }
+</div>

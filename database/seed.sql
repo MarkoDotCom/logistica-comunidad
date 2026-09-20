@@ -2,7 +2,7 @@
 -- Datos de ejemplo — ejecutar después de schema.sql
 --   psql -d <db> -f seed.sql
 -- UUIDs fijos para poder consultarlos a mano:
---   1... comunidad | 2... edificios | 3... departamentos | 4... cuentas | 5... usuarios | 6... contratos
+--   1... comunidad | 2... edificios | 3... departamentos | 4... cuentas | 5... usuarios | 6... contratos | 7... roles
 -- =============================================================================
 BEGIN;
 
@@ -48,5 +48,25 @@ INSERT INTO users.contract (id, unit_id, user_id, type, starts_at, ends_at) VALU
   ('60000000-0000-4000-8000-000000000005', '30000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000004', 'lease',          '2025-01-01', '2025-12-31'),
   ('60000000-0000-4000-8000-000000000006', '30000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000004', 'lease',          '2026-01-01', '2026-12-31'),
   ('60000000-0000-4000-8000-000000000007', '20000000-0000-4000-8000-000000000001', '50000000-0000-4000-8000-000000000005', 'employment',     '2023-05-01', NULL);
+
+-- Roles de ejemplo (el Administrador viene en schema.sql) ------------------
+INSERT INTO auth.role (id, name, description) VALUES
+  ('70000000-0000-4000-8000-000000000002', 'Conserje',  'Ve unidades, contratos y usuarios; no modifica'),
+  ('70000000-0000-4000-8000-000000000003', 'Residente', 'Ve sus unidades y contratos');
+INSERT INTO auth.role_permission (role_id, permission_key) VALUES
+  ('70000000-0000-4000-8000-000000000002', 'summary.read'),
+  ('70000000-0000-4000-8000-000000000002', 'units.read'),
+  ('70000000-0000-4000-8000-000000000002', 'contracts.read'),
+  ('70000000-0000-4000-8000-000000000002', 'users.read'),
+  ('70000000-0000-4000-8000-000000000003', 'units.read'),
+  ('70000000-0000-4000-8000-000000000003', 'contracts.read');
+
+-- Asignación: Marcela administra; Diego es conserje; Ana, Bruno y Carla residentes
+INSERT INTO auth.user_role (user_id, role_id) VALUES
+  ('50000000-0000-4000-8000-000000000001', '70000000-0000-4000-8000-000000000001'),
+  ('50000000-0000-4000-8000-000000000005', '70000000-0000-4000-8000-000000000002'),
+  ('50000000-0000-4000-8000-000000000002', '70000000-0000-4000-8000-000000000003'),
+  ('50000000-0000-4000-8000-000000000003', '70000000-0000-4000-8000-000000000003'),
+  ('50000000-0000-4000-8000-000000000004', '70000000-0000-4000-8000-000000000003');
 
 COMMIT;

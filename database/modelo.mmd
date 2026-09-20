@@ -1,6 +1,6 @@
 %% Modelo de datos — gestión logística de comunidad (PostgreSQL)
 %% Fuente de verdad: schema.sql. Renderizar: mmdc -i modelo.mmd -o modelo.svg
-%% Esquemas: units (unit), users (app_user, contract), public (enums y set_updated_at)
+%% Esquemas: units (unit), users (app_user, contract), auth (permission, role, role_permission, user_role), public (enums y funciones)
 erDiagram
 
   %% ---------------------------------------------------------------
@@ -9,6 +9,10 @@ erDiagram
   unit o|--o{ unit : "parent_id"
   unit     ||--o{ contract : "sobre"
   app_user ||--o{ contract : "firma"
+  app_user ||--o{ user_role : "tiene"
+  role     ||--o{ user_role : ""
+  role     ||--o{ role_permission : "concede"
+  permission ||--o{ role_permission : ""
 
   %% ---------------------------------------------------------------
   %% Entidades
@@ -46,4 +50,30 @@ erDiagram
     text notes
     timestamptz created_at
     timestamptz updated_at
+  }
+
+  permission {
+    text key PK "recurso.accion"
+    text resource
+    text action
+    text description
+  }
+
+  role {
+    uuid id PK
+    citext name "único entre vivos"
+    text description
+    boolean is_system "no se elimina ni renombra"
+    timestamptz deleted_at "NULL = vivo"
+  }
+
+  role_permission {
+    uuid role_id PK_FK
+    text permission_key PK_FK
+  }
+
+  user_role {
+    uuid user_id PK_FK
+    uuid role_id PK_FK
+    timestamptz created_at
   }

@@ -21,6 +21,7 @@ src/
     ├── api-response.*   # envoltorio único de respuestas (éxito y error)
     ├── contracts/
     ├── health/
+    ├── roles/
     ├── summary/
     ├── users/
     └── units/
@@ -42,11 +43,19 @@ Toda respuesta sale con el mismo envoltorio. El cliente puede enviar `x-request-
 | Método | Ruta                   | Descripción |
 |--------|------------------------|-------------|
 | GET    | `/health`              | Estado de la API y la base |
+| GET    | `/permissions`         | Catálogo fijo de permisos (`key` = `recurso.accion`) |
+| GET    | `/roles`               | Roles vivos con nº de permisos y de usuarios |
+| GET    | `/roles/:id`           | Rol con sus permisos y sus usuarios |
+| POST   | `/roles`               | Crea rol (`name`, `description?`, `permissions`) |
+| PATCH  | `/roles/:id`           | Modifica lo que venga; `permissions` reemplaza el conjunto |
+| DELETE | `/roles/:id`           | Borrado lógico (204); no en roles del sistema |
+| PUT    | `/roles/:id/users/:userId` | Asigna el rol a la persona (idempotente) |
+| DELETE | `/roles/:id/users/:userId` | Quita el rol a la persona |
 | GET    | `/summary`             | Métricas del dashboard: unidades activas por tipo, usuarios (total y activos), contratos vigentes y cuántos vencen en 30 días |
 | GET    | `/users?search=`       | Lista usuarios; `search` filtra por nombre o email |
 | GET    | `/users/:id`           | Usuario con sus contratos y las unidades de cada uno |
 | POST   | `/users`               | Crea usuario (`email`, `fullName`, `phone?`, `externalAuthId?`) |
-| PATCH  | `/users/:id`           | Modifica lo que venga (`email`, `fullName`, `phone`, `externalAuthId`, `isActive`) |
+| PATCH  | `/users/:id`           | Modifica lo que venga (`email`, `fullName`, `phone`, `externalAuthId`, `isActive`, `roleIds` reemplaza sus roles) |
 | GET    | `/units?parentId=`     | Sin `parentId`, las comunidades raíz; con él, los hijos directos. Cada fila trae `childrenCount` (hijos vivos). `?includeDeleted=true` incluye eliminadas |
 | GET    | `/units/:id`           | Una unidad |
 | GET    | `/units/:id/detail`    | Detalle completo: la unidad, `ancestors` (de la raíz al padre), `children` vivos con `childrenCount` y `contracts` con la persona de cada uno |
@@ -64,3 +73,5 @@ Reglas que aplica la API: `community` es la única raíz y el resto necesita `pa
 Borrado lógico de unidades: nunca se borra físicamente. Una unidad eliminada desaparece de listas, árbol, `GET /units/:id`, `PATCH` y métricas, y libera su código. Restaurar exige que el padre esté vivo (se restaura de arriba hacia abajo) y que el código siga libre; trae consigo las unidades que se eliminaron en la misma operación. Usuarios: no hay borrado, se usa `isActive`.
 
 Contratos: el tipo debe corresponder al tipo de unidad (comunidad: administración y empleo; edificio: empleo; departamento: propiedad y arriendo; cuenta: ninguno), la persona debe existir y el término no puede ser anterior al inicio. No hay borrado de contratos.
+
+Roles: globales, nombre único entre vivos (409), permisos del catálogo (400 si alguno no existe). Los roles del sistema (`isSystem`, Administrador) cambian de permisos y descripción pero no se renombran ni eliminan. Los permisos se gestionan pero todavía no se aplican: no hay autenticación.

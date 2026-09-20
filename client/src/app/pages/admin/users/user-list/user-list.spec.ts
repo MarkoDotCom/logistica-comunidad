@@ -5,8 +5,8 @@ import { polyfillDialog } from '../../../../shared/ui/dialog/dialog.testing';
 import { UserList } from './user-list';
 
 const USERS = [
-  { id: 'u1', email: 'ana.rojas@example.com', externalAuthId: null, fullName: 'Ana Rojas', phone: '+56 9 2222 2222', isActive: true },
-  { id: 'u2', email: 'bruno.diaz@example.com', externalAuthId: null, fullName: 'Bruno Díaz', phone: null, isActive: false },
+  { id: 'u1', email: 'ana.rojas@example.com', externalAuthId: null, fullName: 'Ana Rojas', phone: '+56 9 2222 2222', isActive: true, roles: [{ id: 'r3', name: 'Residente' }] },
+  { id: 'u2', email: 'bruno.diaz@example.com', externalAuthId: null, fullName: 'Bruno Díaz', phone: null, isActive: false, roles: [] },
 ];
 
 describe('UserList', () => {
@@ -39,6 +39,7 @@ describe('UserList', () => {
 
     expect(rows()).toHaveLength(2);
     expect(rows()[0].textContent).toContain('Activo');
+    expect(rows()[0].textContent).toContain('Residente');
     expect(rows()[1].textContent).toContain('Inactivo');
     expect(rows()[1].textContent).toContain('—');
 
@@ -81,6 +82,7 @@ describe('UserList', () => {
     await fixture.whenStable();
     expect(el.querySelector('app-edit-user')).not.toBeNull();
     http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/users/u2')).flush({ ...USERS[1], contracts: [] });
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/roles')).flush([]);
     await fixture.whenStable();
     expect(el.querySelector('app-edit-user')!.textContent).toContain('Vas a modificar a Bruno Díaz');
   });

@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Gestión logística de comunidad de vivienda — esquema PostgreSQL 13+
--- Esquemas: units (árbol de unidades), users (cuentas y contratos) y public (enums y función compartida)
+-- Esquemas: units (árbol de unidades), users (cuentas y contratos), auth (roles y permisos) y public (enums y funciones compartidas)
 -- Ejecutar: psql -d <db> -f schema.sql
 -- =============================================================================
 
@@ -8,6 +8,7 @@ CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE SCHEMA units;   -- comunidad, edificios, departamentos, cuentas
 CREATE SCHEMA users;   -- cuentas de usuario y sus contratos con las unidades
+CREATE SCHEMA auth;    -- roles, permisos y su asignación a usuarios
 
 -- -----------------------------------------------------------------------------
 -- Tipos enumerados
@@ -128,3 +129,63 @@ CREATE INDEX contract_user_idx ON users.contract (user_id);
 
 CREATE TRIGGER contract_updated_at BEFORE UPDATE ON users.contract
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- =============================================================================
+-- 3. Roles y permisos
+-- =============================================================================
+
+-- Catálogo fijo de acciones del código, '<recurso>.<acción>'. Se combinan en roles desde el admin; no se inventan ahí.
+CREATE TABLE auth.permission (
+  key         text PRIMARY KEY,
+  resource    text NOT NULL,
+  action      text NOT NULL,
+  description text NOT NULL,
+  CONSTRAINT permission_key_format CHECK (key = resource || '.' || action)
+);
+
+INSERT INTO auth.permission (key, resource, action, description) VALUES
+  ('summary.read',    'summary',   'read',   'Ver las métricas del inicio'),
+  ('units.read',      'units',     'read',   'Ver comunidades, edificios, departamentos y cuentas'),
+  ('units.write',     'units',     'write',  'Crear, modificar y mover unidades'),
+  ('units.delete',    'units',     'delete', 'Eliminar y restaurar unidades'),
+  ('contracts.read',  'contracts', 'read',   'Ver contratos'),
+  ('contracts.write', 'contracts', 'write',  'Crear y modificar contratos'),
+  ('users.read',      'users',     'read',   'Ver usuarios'),
+  ('users.write',     'users',     'write',  'Crear y modificar usuarios y sus roles'),
+  ('roles.read',      'roles',     'read',   'Ver roles y permisos'),
+  ('roles.write',     'roles',     'write',  'Crear, modificar y eliminar roles y asignarlos');
+
+-- Roles globales de la aplicación. is_system: roles base que no se eliminan ni se renombran (sí cambian de permisos).
+CREATE TABLE auth.role (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        citext NOT NULL,
+  description text,
+  is_system   boolean NOT NULL DEFAULT false,
+  deleted_at  timestamptz,                      -- NULL = vivo (borrado lógico)
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX role_name_uq ON auth.role (name) WHERE deleted_at IS NULL;
+
+CREATE TRIGGER role_updated_at BEFORE UPDATE ON auth.role
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE auth.role_permission (
+  role_id        uuid NOT NULL REFERENCES auth.role(id) ON DELETE CASCADE,
+  permission_key text NOT NULL REFERENCES auth.permission(key) ON DELETE CASCADE,
+  PRIMARY KEY (role_id, permission_key)
+);
+
+CREATE TABLE auth.user_role (
+  user_id    uuid NOT NULL REFERENCES users.app_user(id) ON DELETE CASCADE,
+  role_id    uuid NOT NULL REFERENCES auth.role(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, role_id)
+);
+CREATE INDEX user_role_role_idx ON auth.user_role (role_id);
+
+-- Rol base con todos los permisos; existe siempre
+INSERT INTO auth.role (id, name, description, is_system) VALUES
+  ('70000000-0000-4000-8000-000000000001', 'Administrador', 'Acceso completo a la aplicación', true);
+INSERT INTO auth.role_permission (role_id, permission_key)
+  SELECT '70000000-0000-4000-8000-000000000001', key FROM auth.permission;

@@ -17,6 +17,8 @@ export const routes: Routes = [
       },
       { path: 'departamentos/:id', loadComponent: () => import('./pages/admin/apartments/apartment-detail/apartment-detail').then((m) => m.ApartmentDetail) },
       { path: 'unidades', loadComponent: () => import('./pages/admin/units/unit-tree/unit-tree').then((m) => m.UnitTree) },
+      { path: 'roles', loadComponent: () => import('./pages/admin/roles/role-list/role-list').then((m) => m.RoleList) },
+      { path: 'roles/:id', loadComponent: () => import('./pages/admin/roles/role-detail/role-detail').then((m) => m.RoleDetail) },
       { path: 'usuarios', loadComponent: () => import('./pages/admin/users/user-list/user-list').then((m) => m.UserList) },
     ],
   },

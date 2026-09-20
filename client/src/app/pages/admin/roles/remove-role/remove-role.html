@@ -1,0 +1,34 @@
+<div class="wizard">
+  @if (done()) {
+    <ui-card heading="Rol eliminado" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name">{{ role().name }}</p>
+      <p class="ui-muted">Ya no aparece en la lista ni en las personas que lo tenían.</p>
+    </ui-card>
+  } @else {
+    <ui-card heading="Eliminar rol" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" finishVariant="danger" (finish)="finish()">
+      @switch (step()) {
+        @case (0) {
+          <p>Vas a eliminar el rol <strong>{{ role().name }}</strong>.</p>
+          @if (role().userCount > 0) {
+            <p>{{ role().userCount === 1 ? '1 persona lo tiene y lo perderá.' : role().userCount + ' personas lo tienen y lo perderán.' }}</p>
+          }
+          <p class="ui-muted">Es un borrado lógico: el rol se conserva en la base y su nombre queda libre.</p>
+        }
+        @case (1) {
+          <dl class="wizard__summary">
+            <dt>Rol</dt>
+            <dd>{{ role().name }}</dd>
+            <dt>Permisos</dt>
+            <dd>{{ role().permissionCount }}</dd>
+            <dt>Personas afectadas</dt>
+            <dd>{{ role().userCount }}</dd>
+          </dl>
+          @if (error(); as error) {
+            <p class="ui-form__error">{{ error }}</p>
+          }
+        }
+      }
+    </ui-card>
+  }
+</div>

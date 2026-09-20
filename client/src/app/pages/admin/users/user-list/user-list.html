@@ -31,6 +31,7 @@
               <th>Nombre</th>
               <th>Email</th>
               <th>Teléfono</th>
+              <th>Roles</th>
               <th>Estado</th>
               <th></th>
             </tr>
@@ -41,6 +42,17 @@
                 <td>{{ user.fullName }}</td>
                 <td>{{ user.email }}</td>
                 <td>{{ user.phone || '—' }}</td>
+                <td>
+                  @if (user.roles.length === 0) {
+                    <span class="ui-muted">—</span>
+                  } @else {
+                    <div class="ui-tags">
+                      @for (role of user.roles; track role.id) {
+                        <ui-tag>{{ role.name }}</ui-tag>
+                      }
+                    </div>
+                  }
+                </td>
                 <td>
                   @if (user.isActive) {
                     <ui-tag>Activo</ui-tag>

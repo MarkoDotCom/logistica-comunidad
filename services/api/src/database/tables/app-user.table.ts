@@ -10,6 +10,7 @@ export interface AppUserDto {
   fullName: string;
   phone: string | null;
   isActive: boolean;
+  roles: { id: string; name: string }[]; // roles vivos
 }
 
 // Contrato visto desde el usuario: con qué unidad y en qué calidad
@@ -40,7 +41,11 @@ export interface AppUserPatch {
   isActive?: boolean;
 }
 
+// Roles vivos del usuario
+const ROLES = { roles: { where: { role: { deleted_at: null } }, select: { role: { select: { id: true, name: true } } }, orderBy: { role: { name: 'asc' } } } } as const;
+
 const INCLUDE = {
+  ...ROLES,
   contracts: {
     select: {
       id: true,
@@ -60,6 +65,7 @@ interface Row {
   full_name: string;
   phone: string | null;
   is_active: boolean;
+  roles: { role: { id: string; name: string } }[];
 }
 
 interface RowWithContracts extends Row {
@@ -73,7 +79,15 @@ interface RowWithContracts extends Row {
 }
 
 function toUser(row: Row): AppUserDto {
-  return { id: row.id, email: row.email, externalAuthId: row.external_auth_id, fullName: row.full_name, phone: row.phone, isActive: row.is_active };
+  return {
+    id: row.id,
+    email: row.email,
+    externalAuthId: row.external_auth_id,
+    fullName: row.full_name,
+    phone: row.phone,
+    isActive: row.is_active,
+    roles: row.roles.map((r) => r.role),
+  };
 }
 
 function toUserWithContracts(row: RowWithContracts): AppUserWithContracts {
@@ -99,6 +113,7 @@ export class AppUserTable {
       where: search
         ? { OR: [{ full_name: { contains: search, mode: 'insensitive' } }, { email: { contains: search, mode: 'insensitive' } }] }
         : undefined,
+      include: ROLES,
       orderBy: { full_name: 'asc' },
     });
     return rows.map(toUser);
@@ -125,8 +140,17 @@ export class AppUserTable {
   async create(user: NewAppUser): Promise<AppUserDto> {
     const row = await this.prisma.app_user.create({
       data: { email: user.email, full_name: user.fullName, phone: user.phone, external_auth_id: user.externalAuthId },
+      include: ROLES,
     });
     return toUser(row);
+  }
+
+  /** Reemplaza el conjunto de roles del usuario. */
+  async setRoles(id: string, roleIds: string[]): Promise<void> {
+    await this.prisma.$transaction([
+      this.prisma.user_role.deleteMany({ where: { user_id: id } }),
+      this.prisma.user_role.createMany({ data: roleIds.map((role_id) => ({ user_id: id, role_id })) }),
+    ]);
   }
 
   async update(id: string, patch: AppUserPatch): Promise<AppUserWithContracts> {

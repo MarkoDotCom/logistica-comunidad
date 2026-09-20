@@ -10,7 +10,7 @@ describe('Admin', () => {
     await fixture.whenStable();
 
     const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.admin__nav a')].map((a) => a.textContent?.trim());
-    expect(links).toEqual(['Inicio', 'Comunidades', 'Árbol', 'Usuarios']);
+    expect(links).toEqual(['Inicio', 'Comunidades', 'Árbol', 'Usuarios', 'Roles']);
     vi.unstubAllGlobals();
   });
 });

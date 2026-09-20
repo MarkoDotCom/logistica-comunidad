@@ -1,3 +1,4 @@
+import type { Permission } from './roles.api';
 import type { ContractType } from './users.api';
 import { CONTRACT_TYPES } from './users.api';
 import { UNIT_KINDS, type UnitKind } from './units.api';
@@ -92,4 +93,41 @@ export function contractStatus(c: { startsAt: string; endsAt: string | null }, t
   if (c.startsAt > today) return 'upcoming';
   if (c.endsAt !== null && c.endsAt < today) return 'expired';
   return 'current';
+}
+
+// Permisos: 'recurso.accion' → textos en español para agruparlos en el wizard de rol
+export const PERMISSION_RESOURCE_LABELS: Record<string, string> = {
+  summary: 'Inicio',
+  units: 'Unidades',
+  contracts: 'Contratos',
+  users: 'Usuarios',
+  roles: 'Roles',
+};
+
+export const PERMISSION_ACTION_LABELS: Record<string, string> = {
+  read: 'Ver',
+  write: 'Crear y modificar',
+  delete: 'Eliminar y restaurar',
+};
+
+export interface PermissionGroup {
+  resource: string;
+  label: string;
+  permissions: Permission[];
+}
+
+/** Agrupa el catálogo por recurso, en el orden en que llega de la API. */
+export function groupPermissions(permissions: Permission[]): PermissionGroup[] {
+  const groups = new Map<string, PermissionGroup>();
+  for (const p of permissions) {
+    if (!groups.has(p.resource)) groups.set(p.resource, { resource: p.resource, label: PERMISSION_RESOURCE_LABELS[p.resource] ?? p.resource, permissions: [] });
+    groups.get(p.resource)!.permissions.push(p);
+  }
+  return [...groups.values()];
+}
+
+/** "Unidades · Crear y modificar" para una clave del catálogo. */
+export function permissionLabel(key: string): string {
+  const [resource, action] = key.split('.');
+  return `${PERMISSION_RESOURCE_LABELS[resource] ?? resource} · ${PERMISSION_ACTION_LABELS[action] ?? action}`;
 }

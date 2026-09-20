@@ -5,7 +5,7 @@
     <ui-card heading="Usuario actualizado" [actions]="resultActions" (action)="closed.emit()">
       <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
       <p class="wizard__result-name">{{ user.fullName }}</p>
-      <p class="ui-muted">{{ user.email }} · {{ user.isActive ? 'Activo' : 'Inactivo' }}</p>
+      <p class="ui-muted">{{ user.email }} · {{ user.isActive ? 'Activo' : 'Inactivo' }}@if (user.roles.length) { · {{ user.roles.map((r) => r.name).join(', ') }}}</p>
     </ui-card>
   } @else if (user(); as user) {
     <ui-card heading="Modificar usuario" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
@@ -27,7 +27,7 @@
                 }
               </ul>
             }
-            <p class="ui-muted">Los contratos no se cambian desde aquí.</p>
+            <p class="ui-muted">Los contratos no se cambian desde aquí; los roles sí, en el paso Roles.</p>
           }
           @case (1) {
             <label class="ui-field">
@@ -54,6 +54,23 @@
             </label>
           }
           @case (2) {
+            @if (rolesFailed()) {
+              <p class="ui-form__error">No se pudieron cargar los roles.</p>
+            } @else if (roles(); as roles) {
+              @if (roles.length === 0) {
+                <p class="ui-muted">Todavía no hay roles. Créalos en Roles.</p>
+              }
+              @for (role of roles; track role.id) {
+                <label class="ui-checkbox edit-user__role">
+                  <input type="checkbox" [checked]="hasRole(role.id)" (change)="onToggleRole(role.id, $event)" />
+                  <span>{{ role.name }} <span class="ui-muted">{{ role.description ? '· ' + role.description : '' }}</span></span>
+                </label>
+              }
+            } @else {
+              <p class="ui-muted">Cargando…</p>
+            }
+          }
+          @case (3) {
             <dl class="wizard__summary">
               <dt>Nombre</dt>
               <dd>{{ value().fullName }}</dd>
@@ -63,6 +80,8 @@
               <dd>{{ value().phone || '—' }}</dd>
               <dt>Estado</dt>
               <dd>{{ value().isActive ? 'Activo' : 'Inactivo' }}</dd>
+              <dt>Roles</dt>
+              <dd>{{ selectedRoleNames().join(', ') || '—' }}</dd>
             </dl>
             @if (error(); as error) {
               <p class="ui-form__error">{{ error }}</p>

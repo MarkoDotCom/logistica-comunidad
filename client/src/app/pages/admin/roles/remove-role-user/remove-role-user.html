@@ -1,0 +1,29 @@
+<div class="wizard">
+  @if (done()) {
+    <ui-card heading="Rol quitado" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name">{{ user().fullName }}</p>
+      <p class="ui-muted">Ya no tiene el rol {{ role().name }}.</p>
+    </ui-card>
+  } @else {
+    <ui-card heading="Quitar rol" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" finishVariant="danger" (finish)="finish()">
+      @switch (step()) {
+        @case (0) {
+          <p>Vas a quitar el rol <strong>{{ role().name }}</strong> a <strong>{{ user().fullName }}</strong>.</p>
+          <p class="ui-muted">La persona sigue existiendo; solo pierde los permisos de este rol.</p>
+        }
+        @case (1) {
+          <dl class="wizard__summary">
+            <dt>Rol</dt>
+            <dd>{{ role().name }}</dd>
+            <dt>Persona</dt>
+            <dd>{{ user().fullName }} <span class="ui-muted">{{ user().email }}</span></dd>
+          </dl>
+          @if (error(); as error) {
+            <p class="ui-form__error">{{ error }}</p>
+          }
+        }
+      }
+    </ui-card>
+  }
+</div>

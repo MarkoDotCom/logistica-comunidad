@@ -3,8 +3,13 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { EditUser } from './edit-user';
 
+const ROLES = [
+  { id: 'r2', name: 'Conserje', description: null, isSystem: false, permissionCount: 4, userCount: 1 },
+  { id: 'r3', name: 'Residente', description: 'Ve lo suyo', isSystem: false, permissionCount: 2, userCount: 3 },
+];
+
 const ANA = {
-  id: 'u1', email: 'ana@example.com', externalAuthId: null, fullName: 'Ana Rojas', phone: null, isActive: true,
+  id: 'u1', email: 'ana@example.com', externalAuthId: null, fullName: 'Ana Rojas', phone: null, isActive: true, roles: [{ id: 'r3', name: 'Residente' }],
   contracts: [{ id: 'k1', type: 'ownership', startsAt: '2019-06-15', endsAt: null, unit: { id: 'a101', kind: 'apartment', code: '101', name: null } }],
 };
 
@@ -23,6 +28,7 @@ describe('EditUser', () => {
     fixture.componentRef.setInput('userId', 'u1');
     await fixture.whenStable();
     http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/users/u1')).flush(ANA);
+    http.expectOne((r) => r.method === 'GET' && r.url.endsWith('/roles')).flush(ROLES);
     await fixture.whenStable();
     return fixture;
   }
@@ -50,10 +56,19 @@ describe('EditUser', () => {
     next().click();
     await fixture.whenStable();
 
+    // Paso Roles: Residente viene marcado; se agrega Conserje
+    const boxes = el.querySelectorAll<HTMLInputElement>('.edit-user__role input');
+    expect([...boxes].map((b) => b.checked)).toEqual([false, true]);
+    boxes[0].click();
+    await fixture.whenStable();
+    next().click();
+    await fixture.whenStable();
+
     expect(el.textContent).toContain('Inactivo');
+    expect(el.textContent).toContain('Conserje, Residente');
     next().click();
     const patch = http.expectOne((r) => r.method === 'PATCH' && r.url.endsWith('/users/u1'));
-    expect(patch.request.body).toEqual({ fullName: 'Ana Rojas', email: 'ana@example.com', phone: '+56 9 1111 1111', isActive: false });
+    expect(patch.request.body).toEqual({ fullName: 'Ana Rojas', email: 'ana@example.com', phone: '+56 9 1111 1111', isActive: false, roleIds: ['r3', 'r2'] });
     patch.flush({ ...ANA, phone: '+56 9 1111 1111', isActive: false });
     await fixture.whenStable();
 
@@ -65,7 +80,7 @@ describe('EditUser', () => {
   it('should show the API error and keep the wizard open', async () => {
     const fixture = await render();
     fixture.componentInstance['form'].patchValue({ email: 'otra@example.com' }); // sin un cambio real no se puede finalizar
-    fixture.componentInstance['step'].set(2);
+    fixture.componentInstance['step'].set(3);
     await fixture.whenStable();
     const el = fixture.nativeElement as HTMLElement;
 

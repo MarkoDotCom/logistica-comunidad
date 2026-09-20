@@ -15,7 +15,7 @@ La URL de la API está en `src/environments/environment.ts` (`http://localhost:3
 
 ```
 src/app/
-├── core/          # HTTP: interceptor que desenvuelve `data`, users.api, units.api, contracts.api, summary.api, labels (español)
+├── core/          # HTTP: interceptor que desenvuelve `data`, users.api, units.api, contracts.api, roles.api, summary.api, labels (español)
 ├── shared/ui/     # componentes base ui-* (button, card, dialog, stepper, tag, section-header, theme-toggle)
 └── pages/admin/      # layout Admin + páginas
     ├── home/         # métricas (GET /summary) y accesos
@@ -23,7 +23,9 @@ src/app/
     ├── apartments/   # /admin/departamentos/:id: detalle completo (ruta, ocupantes, cuentas, contratos)
     ├── units/        # árbol global (unit-tree), gestor de nivel (unit-level), contratos de una unidad
     │                 # (unit-contracts + contract-wizard), wizards new-unit, edit-unit, restore-unit
-    └── users/        # tabla con buscador, wizards new-user y edit-user
+    ├── roles/        # /admin/roles (lista) y /:id (permisos y personas); wizards role-wizard, remove-role,
+    │                 # add-role-user, remove-role-user
+    └── users/        # tabla con buscador y roles, wizards new-user y edit-user (paso Roles)
 ```
 
 Las reglas de diseño (tokens, tipografía, patrones de página y checklist para componentes nuevos) están en `docs/design-rules.md`.

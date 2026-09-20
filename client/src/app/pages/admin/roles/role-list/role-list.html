@@ -1,0 +1,75 @@
+<main class="page">
+  <ui-section-header heading="Roles" subtitle="Conjuntos de permisos que se asignan a personas. Todavía no se aplican: no hay inicio de sesión." />
+
+  <div class="role-list__toolbar">
+    <ui-button (clicked)="newOpen.set(true)">+ Nuevo rol</ui-button>
+  </div>
+
+  <ui-dialog [open]="newOpen()" (openChange)="$event || onDialogClose('new')">
+    @if (newOpen()) {
+      <app-role-wizard (closed)="onDialogClose('new')" />
+    }
+  </ui-dialog>
+
+  <ui-dialog [open]="editing() !== null" (openChange)="$event || onDialogClose('edit')">
+    @if (editing(); as role) {
+      <app-role-wizard [role]="role" (closed)="onDialogClose('edit')" />
+    }
+  </ui-dialog>
+
+  <ui-dialog [open]="removing() !== null" (openChange)="$event || onDialogClose('remove')">
+    @if (removing(); as role) {
+      <app-remove-role [role]="role" (closed)="onDialogClose('remove')" />
+    }
+  </ui-dialog>
+
+  @if (actionError(); as error) {
+    <p class="ui-form__error">{{ error }}</p>
+  }
+
+  @if (failed()) {
+    <p class="ui-form__error">No se pudieron cargar los roles.</p>
+  } @else if (roles(); as roles) {
+    @if (roles.length === 0) {
+      <p class="ui-muted">Todavía no hay roles. Crea el primero con el botón de arriba.</p>
+    } @else {
+      <div class="ui-table-wrap">
+        <table class="ui-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Descripción</th>
+              <th>Permisos</th>
+              <th>Personas</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (role of roles; track role.id) {
+              <tr>
+                <td>
+                  <a class="role-list__link" [routerLink]="['/admin/roles', role.id]">{{ role.name }}</a>
+                  @if (role.isSystem) {
+                    <ui-tag>Sistema</ui-tag>
+                  }
+                </td>
+                <td>{{ role.description || '—' }}</td>
+                <td>{{ role.permissionCount }}</td>
+                <td>{{ role.userCount }}</td>
+                <td class="ui-table__actions">
+                  <a class="role-list__open" [routerLink]="['/admin/roles', role.id]">Abrir</a>
+                  <ui-button variant="secondary" (clicked)="openEdit(role)">Modificar</ui-button>
+                  @if (!role.isSystem) {
+                    <ui-button variant="ghost" (clicked)="removing.set(role)">Eliminar</ui-button>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+</main>

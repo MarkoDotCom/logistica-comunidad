@@ -1,0 +1,75 @@
+<main class="page">
+  @if (failed()) {
+    <p class="ui-form__error">No se pudo cargar el rol.</p>
+  } @else if (role(); as role) {
+    <ui-breadcrumb [items]="breadcrumb()" />
+    <ui-section-header [heading]="role.name" [subtitle]="role.description ?? (role.isSystem ? 'Rol del sistema' : 'Sin descripción')" />
+
+    <ui-dialog [open]="editOpen()" (openChange)="$event || onDialogClose()">
+      @if (editOpen()) {
+        <app-role-wizard [role]="role" (closed)="onDialogClose()" />
+      }
+    </ui-dialog>
+    <ui-dialog [open]="addOpen()" (openChange)="$event || onDialogClose()">
+      @if (addOpen()) {
+        <app-add-role-user [role]="role" (closed)="onDialogClose()" />
+      }
+    </ui-dialog>
+    <ui-dialog [open]="removingUser() !== null" (openChange)="$event || onDialogClose()">
+      @if (removingUser(); as user) {
+        <app-remove-role-user [role]="role" [user]="user" (closed)="onDialogClose()" />
+      }
+    </ui-dialog>
+
+    <section class="detail__section">
+      <div class="detail__heading">
+        <h3 class="detail__title">Permisos</h3>
+        <ui-button variant="secondary" (clicked)="editOpen.set(true)">Modificar rol</ui-button>
+      </div>
+      @if (role.permissions.length === 0) {
+        <p class="ui-muted">Este rol no tiene permisos: solo agrupa personas.</p>
+      } @else {
+        <div class="ui-tags detail__tags">
+          @for (key of role.permissions; track key) {
+            <ui-tag>{{ permissionLabel(key) }}</ui-tag>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="detail__section">
+      <div class="detail__heading">
+        <h3 class="detail__title">Personas con este rol</h3>
+        <ui-button (clicked)="addOpen.set(true)">+ Agregar persona</ui-button>
+      </div>
+      @if (role.users.length === 0) {
+        <p class="ui-muted">Nadie tiene este rol todavía.</p>
+      } @else {
+        <div class="ui-table-wrap">
+          <table class="ui-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of role.users; track user.id) {
+                <tr>
+                  <td>{{ user.fullName }}</td>
+                  <td>{{ user.email }}</td>
+                  <td class="ui-table__actions">
+                    <ui-button variant="ghost" (clicked)="removingUser.set(user)">Quitar</ui-button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+</main>

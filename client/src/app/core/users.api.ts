@@ -15,6 +15,7 @@ export interface UserSummary {
   fullName: string;
   phone: string | null;
   isActive: boolean;
+  roles: { id: string; name: string }[];
 }
 
 export interface UserContract {
@@ -36,12 +37,13 @@ export interface CreateUser {
   phone?: string;
 }
 
-// PATCH /users/:id: solo lo que cambia; null borra el teléfono
+// PATCH /users/:id: solo lo que cambia; null borra el teléfono; roleIds reemplaza sus roles
 export interface UpdateUser {
   email?: string;
   fullName?: string;
   phone?: string | null;
   isActive?: boolean;
+  roleIds?: string[];
 }
 
 @Injectable({ providedIn: 'root' })

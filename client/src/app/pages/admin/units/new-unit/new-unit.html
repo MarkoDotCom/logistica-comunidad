@@ -20,7 +20,11 @@
                 <li><strong>Datos:</strong> tipo, código y nombre.</li>
                 <li><strong>Confirmar:</strong> revisas y se crea.</li>
               </ol>
-              <p class="ui-muted">El código debe ser único entre las unidades del mismo nivel.</p>
+              @if (kinds().length === 0) {
+                <p class="ui-form__error">Una cuenta no puede tener unidades dentro.</p>
+              } @else {
+                <p class="ui-muted">Puede ser {{ kinds().map((k) => kindLabels[k].toLowerCase()).join(', ') }}. El código debe ser único entre las unidades del mismo nivel.</p>
+              }
             } @else {
               <p>Vas a crear una <strong>comunidad</strong>, la raíz del árbol de unidades.</p>
               <ol class="wizard__intro">
@@ -35,7 +39,7 @@
               <label class="ui-field">
                 <span class="ui-field__label">Tipo</span>
                 <select class="ui-select" formControlName="kind">
-                  @for (kind of kinds; track kind) {
+                  @for (kind of kinds(); track kind) {
                     <option [value]="kind">{{ kindLabels[kind] }}</option>
                   }
                 </select>

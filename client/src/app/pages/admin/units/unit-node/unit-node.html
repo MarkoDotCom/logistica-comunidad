@@ -19,7 +19,9 @@
       @if (node().deletedAt) {
         <ui-button variant="secondary" (clicked)="restore.emit(node())">Restaurar</ui-button>
       } @else {
-        <ui-button variant="ghost" (clicked)="add.emit(node())">+ Hijo</ui-button>
+        @if (node().kind !== 'account') {
+          <ui-button variant="ghost" (clicked)="add.emit(node())">+ Hijo</ui-button>
+        }
         <ui-button variant="secondary" (clicked)="edit.emit(node())">Modificar</ui-button>
         <ui-button variant="ghost" (clicked)="remove.emit(node())">Eliminar</ui-button>
       }

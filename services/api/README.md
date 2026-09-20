@@ -55,6 +55,6 @@ Toda respuesta sale con el mismo envoltorio. El cliente puede enviar `x-request-
 | DELETE | `/units/:id`           | Borrado lógico de la unidad y su subárbol (`deleted_at`); responde `{ deleted: n }` |
 | POST   | `/units/:id/restore`   | Revierte el borrado lógico de la unidad y de lo que se eliminó con ella |
 
-Reglas que aplica la API (no la base): `community` es la única raíz y el resto necesita `parentId`; el padre debe existir y estar vivo; no se puede mover una unidad bajo sí misma ni bajo su subárbol; el código no se repite entre hermanos vivos (409).
+Reglas que aplica la API: `community` es la única raíz y el resto necesita `parentId`; el padre debe existir y estar vivo; no se puede mover una unidad bajo sí misma ni bajo su subárbol; el código no se repite entre hermanos vivos (409). Orden de la jerarquía (también en la base, trigger `unit_check_rank`): comunidad > edificio > departamento > cuenta; una unidad solo cuelga de otra de rango superior, se pueden saltar niveles, y no se puede cambiar el tipo de una unidad si le quedan hijos de su mismo rango o superior (400 con el motivo).
 
 Borrado lógico de unidades: nunca se borra físicamente. Una unidad eliminada desaparece de listas, árbol, `GET /units/:id`, `PATCH` y métricas, y libera su código. Restaurar exige que el padre esté vivo (se restaura de arriba hacia abajo) y que el código siga libre; trae consigo las unidades que se eliminaron en la misma operación. Usuarios: no hay borrado, se usa `isActive`.

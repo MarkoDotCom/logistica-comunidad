@@ -1,5 +1,5 @@
 import type { ContractType } from './users.api';
-import type { UnitKind } from './units.api';
+import { UNIT_KINDS, type UnitKind } from './units.api';
 
 export const UNIT_KIND_LABELS: Record<UnitKind, string> = {
   community: 'Comunidad',
@@ -23,7 +23,24 @@ export const NEW_UNIT_LABELS: Record<UnitKind, string> = {
   account: 'Nueva cuenta',
 };
 
-// Tipo de hijo habitual de cada tipo (la jerarquía es flexible; esto solo guía la interfaz)
+// Espejo de unit_rank() en la base: menor = más arriba. Una unidad solo cuelga de otra de rango menor (se pueden saltar niveles).
+export const UNIT_RANK: Record<UnitKind, number> = { community: 0, building: 1, apartment: 2, account: 3 };
+
+export function canNest(parent: UnitKind, child: UnitKind): boolean {
+  return UNIT_RANK[parent] < UNIT_RANK[child];
+}
+
+/** Tipos que pueden colgar de un padre de tipo `parent`; con null (raíz), solo community. */
+export function allowedChildKinds(parent: UnitKind | null): UnitKind[] {
+  return parent === null ? ['community'] : UNIT_KINDS.filter((k) => canNest(parent, k));
+}
+
+/** Tipos que puede tener una unidad dado el tipo de su padre y los de sus hijos (null = padre desconocido). */
+export function allowedKinds(parent: UnitKind | null, children: UnitKind[]): UnitKind[] {
+  return UNIT_KINDS.filter((k) => (parent === null ? k !== 'community' : canNest(parent, k)) && children.every((c) => canNest(k, c)));
+}
+
+// Tipo de hijo sugerido para cada tipo (el inmediatamente inferior)
 export const CHILD_KIND: Record<UnitKind, UnitKind> = {
   community: 'building',
   building: 'apartment',

@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, type OnInit, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { apiErrorMessage, UNIT_KIND_LABELS, unitLabel } from '../../../../core/labels';
+import { allowedKinds, apiErrorMessage, UNIT_KIND_LABELS, UNIT_RANK, unitLabel } from '../../../../core/labels';
 import { UnitsApi, type Unit, type UnitKind, type UpdateUnit } from '../../../../core/units.api';
 import { Card, type CardAction, Stepper, Tag } from '../../../../shared/ui';
 
@@ -10,8 +10,6 @@ export interface MoveOption {
   id: string;
   label: string;
 }
-
-const CHILD_KINDS: UnitKind[] = ['building', 'apartment', 'account'];
 
 // Edición de unidad (card en modo wizard) y tarjeta de resultado. Se muestra dentro de un ui-dialog.
 // Cambiar "Cuelga de" mueve la unidad con todo su subárbol; una comunidad no se mueve ni cambia de tipo.
@@ -27,6 +25,9 @@ export class EditUnit implements OnInit {
   readonly unit = input.required<Unit>();
   /** Unidades a las que se puede mover (misma comunidad, sin la propia ni sus descendientes). Vacío = no se ofrece mover. */
   readonly moveOptions = input<MoveOption[]>([]);
+  /** Tipo del padre y tipos de los hijos, para ofrecer solo tipos que respeten el orden; null/[] = desconocidos. */
+  readonly parentKind = input<UnitKind | null>(null);
+  readonly childKinds = input<UnitKind[]>([]);
   readonly closed = output<void>();
 
   protected readonly steps = ['Presentación', 'Datos', 'Confirmar'];
@@ -35,7 +36,7 @@ export class EditUnit implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly updated = signal<Unit | null>(null);
   protected readonly kindLabels = UNIT_KIND_LABELS;
-  protected readonly kinds = CHILD_KINDS;
+  protected readonly kinds = computed(() => allowedKinds(this.parentKind(), this.childKinds()));
   protected readonly unitLabel = unitLabel;
   protected readonly resultActions: CardAction[] = [{ id: 'close', label: 'Cerrar' }];
 
@@ -49,6 +50,7 @@ export class EditUnit implements OnInit {
   protected readonly value = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
   protected readonly isCommunity = computed(() => this.unit().kind === 'community');
   protected readonly parentLabel = computed(() => this.moveOptions().find((o) => o.id === this.value().parentId)?.label ?? '—');
+  protected readonly rank = UNIT_RANK;
 
   protected readonly canAdvance = computed(() => {
     this.value();

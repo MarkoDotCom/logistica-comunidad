@@ -40,7 +40,7 @@ psql -d comunidad -f seed.sql
 |----------|-----------|
 | `units`  | `unit` |
 | `users`  | `app_user`, `contract` |
-| `public` | Enums `unit_kind`, `contract_type` y la función `set_updated_at()` |
+| `public` | Enums `unit_kind`, `contract_type` y las funciones `set_updated_at()` y `unit_rank()` |
 
 En Prisma el datasource declara `schemas = ["public", "units", "users"]` y cada modelo lleva `@@schema(...)`.
 
@@ -94,7 +94,7 @@ erDiagram
 ## Reglas
 
 - **Raíz**: `kind = 'community'` ⇔ `parent_id IS NULL` (constraint `unit_root_is_community`). Todo lo demás tiene padre.
-- **Jerarquía flexible**: no se valida que el padre sea del tipo inmediatamente superior. Se pueden intercalar niveles o agregar tipos con `ALTER TYPE unit_kind ADD VALUE`.
+- **Orden de la jerarquía**: `unit_rank()` da community 0, building 1, apartment 2, account 3. El trigger `unit_check_rank` exige que el padre tenga rango menor que la unidad y que, al cambiar el tipo, todos sus hijos tengan rango mayor. Se pueden saltar niveles (departamento directo bajo comunidad); no se puede anidar el mismo tipo ni invertir el orden. Para agregar un tipo: `ALTER TYPE unit_kind ADD VALUE` y darle rango en `unit_rank()`.
 - **Ciclos**: la base solo impide que una unidad sea su propio padre. Evitar ciclos al reasignar `parent_id` es responsabilidad de la aplicación.
 - **Alcance del contrato**: aplica a la unidad y a todo su subárbol (administración de la comunidad ve todo; dueño de un departamento ve su cuenta). La base no restringe qué tipo de contrato va en qué tipo de unidad; lo decide la aplicación.
 - **Vigencia**: un contrato está vigente si `starts_at <= hoy` y (`ends_at IS NULL` o `ends_at >= hoy`). La base no impide solapamientos entre contratos de la misma persona y unidad; lo controla la aplicación.

@@ -84,6 +84,25 @@ describe('Unidades (e2e)', () => {
     await request(app.getHttpServer()).post('/units').send({ kind: 'building', code: 'T3', parentId: '00000000-0000-4000-8000-000000000000' }).expect(400);
   });
 
+  it('enforces the hierarchy order: no same kind, no inversion, skipping levels allowed', async () => {
+    const [tower] = (await request(app.getHttpServer()).get(`/units?parentId=${communityId}`)).body.data.filter((u: { kind: string }) => u.kind === 'building');
+    const [apt] = (await request(app.getHttpServer()).get(`/units?parentId=${tower.id}`)).body.data;
+
+    const same = await request(app.getHttpServer()).post('/units').send({ kind: 'building', code: 'T9', parentId: tower.id }).expect(400);
+    expect(same.body.message).toBe('Un edificio no puede colgar de un edificio');
+    await request(app.getHttpServer()).post('/units').send({ kind: 'building', code: 'T9', parentId: apt.id }).expect(400);
+    const account = await request(app.getHttpServer()).post('/units').send({ kind: 'account', code: 'GC', parentId: apt.id }).expect(201);
+    await request(app.getHttpServer()).post('/units').send({ kind: 'apartment', code: 'x', parentId: account.body.data.id }).expect(400);
+
+    // Salto de nivel: departamento directo bajo la comunidad
+    const skip = await request(app.getHttpServer()).post('/units').send({ kind: 'apartment', code: 'directo', parentId: communityId }).expect(201);
+    // Cambiar de tipo con hijos incompatibles se rechaza; sin ellos, se permite
+    const change = await request(app.getHttpServer()).patch(`/units/${tower.id}`).send({ kind: 'apartment' }).expect(400);
+    expect(change.body.message).toBe('Un departamento no puede tener dentro un departamento');
+    await request(app.getHttpServer()).patch(`/units/${skip.body.data.id}`).send({ kind: 'building' }).expect(200);
+    await request(app.getHttpServer()).patch(`/units/${skip.body.data.id}`).send({ kind: 'apartment' }).expect(200);
+  });
+
   it('updates a unit and moves it without creating cycles', async () => {
     const [tower] = (await request(app.getHttpServer()).get(`/units?parentId=${communityId}`)).body.data;
     const [apt] = (await request(app.getHttpServer()).get(`/units?parentId=${tower.id}`)).body.data;
@@ -98,7 +117,7 @@ describe('Unidades (e2e)', () => {
     expect(moved.body.data.parentId).toBe(communityId);
 
     const tree = await request(app.getHttpServer()).get(`/units/${communityId}/tree`).expect(200);
-    expect(tree.body.data.children.map((u: { code: string }) => u.code)).toEqual(['11', 'T1']);
+    expect(tree.body.data.children.map((u: { code: string }) => u.code)).toEqual(expect.arrayContaining(['11', 'T1', 'directo']));
   });
 
   it('soft-deletes a subtree, hides it, frees the code and restores it top-down', async () => {
@@ -109,11 +128,12 @@ describe('Unidades (e2e)', () => {
     await request(app.getHttpServer()).post('/units').send({ kind: 'apartment', code: '12', parentId: tower.id }).expect(201);
 
     const del = await request(app.getHttpServer()).delete(`/units/${tower.id}`).expect(200);
-    expect(del.body.data).toEqual({ deleted: 2 });
+    expect(del.body.data.deleted).toBeGreaterThanOrEqual(2);
 
     // Desaparece de listas, árbol y GET; el árbol con includeDeleted la muestra con deletedAt
     const after = (await request(app.getHttpServer()).get(`/units?parentId=${communityId}`)).body.data as { code: string }[];
-    expect(after.map((u) => u.code)).toEqual(['11']);
+    expect(after.map((u) => u.code)).toContain('11');
+    expect(after.map((u) => u.code)).not.toContain('T1');
     await request(app.getHttpServer()).get(`/units/${tower.id}`).expect(404);
     await request(app.getHttpServer()).patch(`/units/${tower.id}`).send({ name: 'x' }).expect(404);
     const withDeleted = await request(app.getHttpServer()).get(`/units/${communityId}/tree?includeDeleted=true`).expect(200);

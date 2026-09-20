@@ -16,13 +16,29 @@ describe('EditUnit', () => {
 
   afterEach(() => http.verify());
 
-  async function render(unit: object, options = OPTIONS) {
+  async function render(unit: object, options = OPTIONS, parentKind: string | null = null, childKinds: string[] = []) {
     const fixture = TestBed.createComponent(EditUnit);
     fixture.componentRef.setInput('unit', unit);
     fixture.componentRef.setInput('moveOptions', options);
+    fixture.componentRef.setInput('parentKind', parentKind);
+    fixture.componentRef.setInput('childKinds', childKinds);
     await fixture.whenStable();
     return fixture;
   }
+
+  it('should offer only kinds between the parent and the children', async () => {
+    const tower = { id: 'a', parentId: 'c', kind: 'building', code: 'A', name: 'Torre A', deletedAt: null };
+    const kinds = async (parentKind: string | null, childKinds: string[]) => {
+      const fixture = await render(tower, [], parentKind, childKinds);
+      fixture.componentInstance['step'].set(1);
+      await fixture.whenStable();
+      return [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLOptionElement>('[formControlName="kind"] option')].map((o) => o.value);
+    };
+    expect(await kinds('community', ['apartment'])).toEqual(['building']);
+    expect(await kinds('community', ['account'])).toEqual(['building', 'apartment']);
+    expect(await kinds('community', [])).toEqual(['building', 'apartment', 'account']);
+    expect(await kinds(null, [])).toEqual(['building', 'apartment', 'account']);
+  });
 
   it('should PATCH only the changed fields, including the new parent', async () => {
     const fixture = await render(APT);

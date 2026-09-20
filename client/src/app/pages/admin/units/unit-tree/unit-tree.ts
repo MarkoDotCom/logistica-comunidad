@@ -1,19 +1,22 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { forkJoin, of, switchMap } from 'rxjs';
-import { apiErrorMessage, UNIT_KIND_LABELS, unitLabel } from '../../../../core/labels';
-import { UnitsApi, type Unit, type UnitNode as UnitNodeData } from '../../../../core/units.api';
+import { apiErrorMessage, canNest, UNIT_KIND_LABELS, unitLabel } from '../../../../core/labels';
+import { UnitsApi, type Unit, type UnitKind, type UnitNode as UnitNodeData } from '../../../../core/units.api';
 import { Button, Card, type CardAction, Dialog, SectionHeader } from '../../../../shared/ui';
 import { EditUnit, type MoveOption } from '../edit-unit/edit-unit';
 import { NewUnit } from '../new-unit/new-unit';
 import { RestoreUnit } from '../restore-unit/restore-unit';
 import { UnitNode } from '../unit-node/unit-node';
 
-/** Lista plana de un subárbol como opciones de "colgar de", saltando la unidad que se mueve y sus descendientes. */
-export function moveOptions(root: UnitNodeData, skipId: string, depth = 0): MoveOption[] {
+/**
+ * Lista plana de un subárbol como opciones de "colgar de": salta la unidad que se mueve y sus descendientes,
+ * y solo ofrece unidades de rango superior al tipo `kind` (regla de orden).
+ */
+export function moveOptions(root: UnitNodeData, skipId: string, kind: UnitKind, depth = 0): MoveOption[] {
   if (root.id === skipId) return [];
-  const own: MoveOption = { id: root.id, label: `${'— '.repeat(depth)}${unitLabel(root)}` };
-  return [own, ...root.children.flatMap((c) => moveOptions(c, skipId, depth + 1))];
+  const own: MoveOption[] = canNest(root.kind, kind) ? [{ id: root.id, label: `${'— '.repeat(depth)}${unitLabel(root)}` }] : [];
+  return [...own, ...root.children.flatMap((c) => moveOptions(c, skipId, kind, depth + 1))];
 }
 
 @Component({
@@ -59,7 +62,22 @@ export class UnitTree {
     const trees = this.trees();
     if (!unit || !trees || unit.kind === 'community') return [];
     const tree = trees.find((t) => contains(t, unit.id));
-    return tree ? moveOptions(tree, unit.id) : [];
+    return tree ? moveOptions(tree, unit.id, unit.kind) : [];
+  });
+
+  // Tipo del padre y tipos de los hijos de la unidad en edición, para que el wizard ofrezca solo tipos válidos
+  protected readonly editingParentKind = computed<UnitKind | null>(() => {
+    const unit = this.editing();
+    const trees = this.trees();
+    if (!unit?.parentId || !trees) return null;
+    return trees.map((t) => findNode(t, unit.parentId!)).find(Boolean)?.kind ?? null;
+  });
+  protected readonly editingChildKinds = computed<UnitKind[]>(() => {
+    const unit = this.editing();
+    const trees = this.trees();
+    if (!unit || !trees) return [];
+    const node = trees.map((t) => findNode(t, unit.id)).find(Boolean);
+    return [...new Set(node?.children.map((c) => c.kind) ?? [])];
   });
 
   constructor() {

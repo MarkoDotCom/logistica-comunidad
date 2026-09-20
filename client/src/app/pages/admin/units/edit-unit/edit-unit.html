@@ -25,7 +25,7 @@
               <label class="ui-field">
                 <span class="ui-field__label">Tipo</span>
                 <select class="ui-select" formControlName="kind">
-                  @for (kind of kinds; track kind) {
+                  @for (kind of kinds(); track kind) {
                     <option [value]="kind">{{ kindLabels[kind] }}</option>
                   }
                 </select>

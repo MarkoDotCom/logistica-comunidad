@@ -14,7 +14,7 @@
 
 <ui-dialog [open]="editing() !== null" (openChange)="$event || onDialogClose('edit')">
   @if (editing(); as unit) {
-    <app-edit-unit [unit]="unit" (closed)="onDialogClose('edit')" />
+    <app-edit-unit [unit]="unit" [parentKind]="parent()?.kind ?? null" (closed)="onDialogClose('edit')" />
   }
 </ui-dialog>
 

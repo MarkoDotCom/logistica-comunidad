@@ -18,9 +18,13 @@ const TREE: UnitNode = {
 };
 
 describe('moveOptions', () => {
-  it('should flatten the tree with indentation, skipping the moved unit and its subtree', () => {
-    expect(moveOptions(TREE, 'a')).toEqual([
+  it('should offer only higher-rank units, skipping the moved unit and its subtree', () => {
+    // Un edificio solo puede colgar de la comunidad (no de otro edificio)
+    expect(moveOptions(TREE, 'a', 'building')).toEqual([{ id: 'c', label: 'Los Álamos' }]);
+    // Un departamento puede colgar de la comunidad o de un edificio
+    expect(moveOptions(TREE, 'a101', 'apartment')).toEqual([
       { id: 'c', label: 'Los Álamos' },
+      { id: 'a', label: '— Torre A' },
       { id: 'b', label: '— Edificio B' },
     ]);
   });

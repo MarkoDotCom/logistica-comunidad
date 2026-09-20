@@ -1,7 +1,12 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { UnitTable, type UnitContractDto, type UnitDto, type UnitSummary } from '../../database/tables/unit.table.js';
+import { canNest } from '../../database/unit-rank.js';
 import { CreateUnitDto } from './dto/create-unit.dto.js';
 import { UpdateUnitDto } from './dto/update-unit.dto.js';
+
+// Para los mensajes de error, con artículo
+const KIND_ES: Record<UnitDto['kind'], string> = { community: 'una comunidad', building: 'un edificio', apartment: 'un departamento', account: 'una cuenta' };
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export interface UnitNode extends UnitDto {
   children: UnitNode[];
@@ -72,6 +77,10 @@ export class UnitsService {
     if (moves || next.kind !== current.kind || next.code !== current.code) {
       await this.assertValidPlacement(next.kind, next.parentId, next.code, id);
     }
+    if (next.kind !== current.kind) {
+      const lower = (await this.units.childKinds(id)).filter((k) => !canNest(next.kind, k));
+      if (lower.length) throw new BadRequestException(`${cap(KIND_ES[next.kind])} no puede tener dentro ${lower.map((k) => KIND_ES[k]).join(' ni ')}`);
+    }
     return this.units.update(id, dto);
   }
 
@@ -95,11 +104,18 @@ export class UnitsService {
     return this.units.restore(id);
   }
 
-  /** Reglas de ubicación: community es la única raíz, el padre existe (vivo) y el código no se repite entre hermanos vivos. */
+  /**
+   * Reglas de ubicación: community es la única raíz, el padre existe (vivo) y es de rango superior
+   * (comunidad > edificio > departamento > cuenta; se pueden saltar niveles), y el código no se repite entre hermanos vivos.
+   */
   private async assertValidPlacement(kind: UnitDto['kind'], parentId: string | null, code: string, exceptId?: string): Promise<void> {
     if (kind === 'community' && parentId) throw new BadRequestException('Una comunidad no puede tener unidad padre');
     if (kind !== 'community' && !parentId) throw new BadRequestException('Toda unidad que no sea comunidad necesita parentId');
-    if (parentId && !(await this.units.find(parentId))) throw new BadRequestException('La unidad padre no existe');
+    if (parentId) {
+      const parent = await this.units.find(parentId);
+      if (!parent) throw new BadRequestException('La unidad padre no existe');
+      if (!canNest(parent.kind, kind)) throw new BadRequestException(`${cap(KIND_ES[kind])} no puede colgar de ${KIND_ES[parent.kind]}`);
+    }
     if (await this.units.existsSiblingCode(parentId, code, exceptId)) throw new ConflictException('Ya existe una unidad con ese código en el mismo nivel');
   }
 }

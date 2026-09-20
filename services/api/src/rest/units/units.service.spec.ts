@@ -116,3 +116,33 @@ describe('UnitsService: detalle', () => {
     await expect(service.findDetail('nope')).rejects.toThrow('Unidad no encontrada');
   });
 });
+
+describe('UnitsService: orden de la jerarquía', () => {
+  it('rejects nesting the same kind or a higher one, and allows skipping levels', async () => {
+    const find = vi.fn().mockImplementation(async (id: string) => ({ c: community, a: towerA, a101: apt101 })[id] ?? null);
+    const existsSiblingCode = vi.fn().mockResolvedValue(false);
+    const create = vi.fn().mockImplementation(async (u: object) => ({ id: 'new', deletedAt: null, ...u }));
+    const service = await serviceWith({ find, existsSiblingCode, create });
+
+    await expect(service.create({ kind: 'building', code: 'B2', parentId: 'a' })).rejects.toThrow('Un edificio no puede colgar de un edificio');
+    await expect(service.create({ kind: 'building', code: 'B2', parentId: 'a101' })).rejects.toThrow('Un edificio no puede colgar de un departamento');
+    await expect(service.create({ kind: 'apartment', code: '7', parentId: 'c' })).resolves.toMatchObject({ kind: 'apartment', parentId: 'c' }); // salto de nivel
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a kind change that leaves children of the same or higher kind, and a move under a lower kind', async () => {
+    const find = vi.fn().mockImplementation(async (id: string) => ({ c: community, a: towerA, a101: apt101 })[id] ?? null);
+    const isSelfOrDescendant = vi.fn().mockResolvedValue(false);
+    const existsSiblingCode = vi.fn().mockResolvedValue(false);
+    const childKinds = vi.fn().mockResolvedValue(['apartment']);
+    const update = vi.fn().mockImplementation(async (_id: string, patch: object) => ({ ...towerA, ...patch }));
+    const service = await serviceWith({ find, isSelfOrDescendant, existsSiblingCode, childKinds, update });
+
+    await expect(service.update('a', { kind: 'apartment' })).rejects.toThrow('Un departamento no puede tener dentro un departamento');
+    await expect(service.update('a', { parentId: 'a101' })).rejects.toThrow('Un edificio no puede colgar de un departamento');
+    expect(update).not.toHaveBeenCalled();
+
+    childKinds.mockResolvedValueOnce(['account']);
+    await expect(service.update('a', { kind: 'apartment' })).resolves.toMatchObject({ kind: 'apartment' });
+  });
+});

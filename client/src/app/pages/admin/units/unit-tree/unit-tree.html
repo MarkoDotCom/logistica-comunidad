@@ -17,7 +17,7 @@
 
   <ui-dialog [open]="editing() !== null" (openChange)="onEditOpenChange($event)">
     @if (editing(); as unit) {
-      <app-edit-unit [unit]="unit" [moveOptions]="moveOptions()" (closed)="onEditOpenChange(false)" />
+      <app-edit-unit [unit]="unit" [moveOptions]="moveOptions()" [parentKind]="editingParentKind()" [childKinds]="editingChildKinds()" (closed)="onEditOpenChange(false)" />
     }
   </ui-dialog>
 

@@ -2,16 +2,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, type OnInit, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { apiErrorMessage, UNIT_KIND_LABELS, unitLabel } from '../../../../core/labels';
+import { allowedChildKinds, apiErrorMessage, CHILD_KIND, UNIT_KIND_LABELS, unitLabel } from '../../../../core/labels';
 import { UnitsApi, type Unit, type UnitKind } from '../../../../core/units.api';
 import { Card, type CardAction, Stepper, Tag } from '../../../../shared/ui';
 
-// Tipo sugerido para el hijo según el tipo del padre
-const CHILD_KIND: Record<UnitKind, UnitKind> = { community: 'building', building: 'apartment', apartment: 'account', account: 'account' };
-const CHILD_KINDS: UnitKind[] = ['building', 'apartment', 'account'];
-
 // Alta de unidad en tres pasos (card en modo wizard) y tarjeta de resultado. Se muestra dentro de un ui-dialog.
-// Sin padre crea una comunidad; con padre, un hijo del tipo elegido.
+// Sin padre crea una comunidad; con padre, un hijo de un tipo de rango inferior al del padre (regla de orden).
 @Component({
   selector: 'app-new-unit',
   imports: [ReactiveFormsModule, Card, Stepper, Tag],
@@ -30,7 +26,8 @@ export class NewUnit implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly created = signal<Unit | null>(null);
   protected readonly kindLabels = UNIT_KIND_LABELS;
-  protected readonly kinds = CHILD_KINDS;
+  // Tipos que admite el padre; vacío si el padre es una cuenta (no puede tener hijos)
+  protected readonly kinds = computed(() => allowedChildKinds(this.parent()?.kind ?? null));
   protected readonly unitLabel = unitLabel;
   protected readonly resultActions: CardAction[] = [
     { id: 'close', label: 'Cerrar' },
@@ -48,6 +45,8 @@ export class NewUnit implements OnInit {
   protected readonly canAdvance = computed(() => {
     this.value();
     switch (this.step()) {
+      case 0:
+        return this.kinds().length > 0;
       case 1:
         return this.form.controls.code.valid && this.form.controls.code.value.trim().length > 0;
       case 2:

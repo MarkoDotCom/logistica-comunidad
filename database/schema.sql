@@ -33,8 +33,9 @@ $$ LANGUAGE plpgsql;
 -- =============================================================================
 
 -- Árbol de unidades anidables: community > building > apartment > account.
--- La jerarquía es flexible: cualquier unidad puede colgar de cualquier otra;
--- solo se exige que community sea raíz y que el resto tenga padre.
+-- Regla de orden: una unidad solo cuelga de otra de rango superior (ver unit_rank y el trigger unit_check_rank).
+-- Se pueden saltar niveles (un departamento directo bajo una comunidad), pero no anidar el mismo tipo ni invertir el orden.
+-- community es la única raíz y el resto tiene padre.
 -- Borrado lógico: deleted_at marca la unidad (y su subárbol, lo hace la aplicación) como eliminada.
 -- Nunca se borra físicamente desde la API; los contratos e historial quedan.
 CREATE TABLE units.unit (
@@ -57,6 +58,36 @@ CREATE INDEX unit_kind_alive_idx   ON units.unit (kind)      WHERE deleted_at IS
 
 CREATE TRIGGER unit_updated_at BEFORE UPDATE ON units.unit
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Rango de cada tipo en la jerarquía: menor = más arriba
+CREATE OR REPLACE FUNCTION unit_rank(k unit_kind) RETURNS int
+LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE k WHEN 'community' THEN 0 WHEN 'building' THEN 1 WHEN 'apartment' THEN 2 WHEN 'account' THEN 3 END
+$$;
+
+-- El padre debe ser de rango menor que la unidad, y la unidad de rango menor que todos sus hijos (vivos o eliminados)
+CREATE OR REPLACE FUNCTION units.check_unit_rank() RETURNS trigger AS $$
+DECLARE
+  parent_kind unit_kind;
+BEGIN
+  IF NEW.parent_id IS NOT NULL THEN
+    SELECT kind INTO parent_kind FROM units.unit WHERE id = NEW.parent_id;
+    IF unit_rank(parent_kind) >= unit_rank(NEW.kind) THEN
+      RAISE EXCEPTION 'una unidad de tipo % no puede colgar de una de tipo %', NEW.kind, parent_kind
+        USING ERRCODE = 'check_violation', CONSTRAINT = 'unit_parent_rank';
+    END IF;
+  END IF;
+  IF TG_OP = 'UPDATE' AND NEW.kind <> OLD.kind
+     AND EXISTS (SELECT 1 FROM units.unit c WHERE c.parent_id = NEW.id AND unit_rank(c.kind) <= unit_rank(NEW.kind)) THEN
+    RAISE EXCEPTION 'una unidad de tipo % no puede tener hijos de su mismo tipo o superior', NEW.kind
+      USING ERRCODE = 'check_violation', CONSTRAINT = 'unit_children_rank';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER unit_check_rank BEFORE INSERT OR UPDATE OF parent_id, kind ON units.unit
+  FOR EACH ROW EXECUTE FUNCTION units.check_unit_rank();
 
 -- =============================================================================
 -- 2. Usuarios y contratos

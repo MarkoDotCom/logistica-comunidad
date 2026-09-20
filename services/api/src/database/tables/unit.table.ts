@@ -82,6 +82,12 @@ export class UnitTable {
     return rows.map(toUnit);
   }
 
+  /** Tipos distintos de los hijos directos (vivos o eliminados). */
+  async childKinds(id: string): Promise<unit_kind[]> {
+    const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { parent_id: id } });
+    return groups.map((g) => g.kind);
+  }
+
   /** Contratos de la unidad con la persona de cada uno, del más reciente al más antiguo. */
   async contracts(unitId: string): Promise<UnitContractDto[]> {
     const rows = await this.prisma.contract.findMany({

@@ -64,4 +64,19 @@ describe('NewUnit', () => {
     await fixture.whenStable();
     expect(el.querySelector('.ui-form__error')?.textContent).toContain('mismo nivel');
   });
+
+  it('should offer only kinds below the parent and block children under an account', async () => {
+    const fixture = await render({ id: 'a101', parentId: 'a', kind: 'apartment', code: '101', name: null, deletedAt: null });
+    const el = fixture.nativeElement as HTMLElement;
+    fixture.componentInstance['step'].set(1);
+    await fixture.whenStable();
+    expect([...el.querySelectorAll<HTMLOptionElement>('[formControlName="kind"] option')].map((o) => o.value)).toEqual(['account']);
+
+    const blocked = TestBed.createComponent(NewUnit);
+    blocked.componentRef.setInput('parent', { id: 'gc', parentId: 'a101', kind: 'account', code: 'GC', name: null, deletedAt: null });
+    await blocked.whenStable();
+    const bel = blocked.nativeElement as HTMLElement;
+    expect(bel.textContent).toContain('Una cuenta no puede tener unidades dentro');
+    expect(bel.querySelector<HTMLButtonElement>('.ui-card__actions button')!.disabled).toBe(true);
+  });
 });

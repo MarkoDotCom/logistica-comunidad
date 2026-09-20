@@ -35,6 +35,12 @@
     }
   </ui-dialog>
 
+  <ui-dialog [open]="restoring() !== null" (openChange)="onRestoreOpenChange($event)">
+    @if (restoring(); as node) {
+      <app-restore-unit [node]="node" (closed)="onRestoreOpenChange(false)" />
+    }
+  </ui-dialog>
+
   @if (actionError(); as error) {
     <p class="ui-form__error">{{ error }}</p>
   }
@@ -47,7 +53,7 @@
     } @else {
       <div class="unit-tree__list">
         @for (tree of trees; track tree.id) {
-          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="removing.set($event)" (restore)="onRestore($event)" />
+          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="removing.set($event)" (restore)="restoring.set($event)" />
         }
       </div>
     }

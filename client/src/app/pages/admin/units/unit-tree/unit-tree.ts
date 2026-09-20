@@ -1,11 +1,12 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
-import { forkJoin, type Observable, of, switchMap } from 'rxjs';
+import { forkJoin, of, switchMap } from 'rxjs';
 import { apiErrorMessage, UNIT_KIND_LABELS, unitLabel } from '../../../../core/labels';
 import { UnitsApi, type Unit, type UnitNode as UnitNodeData } from '../../../../core/units.api';
 import { Button, Card, type CardAction, Dialog, SectionHeader } from '../../../../shared/ui';
 import { EditUnit, type MoveOption } from '../edit-unit/edit-unit';
 import { NewUnit } from '../new-unit/new-unit';
+import { RestoreUnit } from '../restore-unit/restore-unit';
 import { UnitNode } from '../unit-node/unit-node';
 
 /** Lista plana de un subárbol como opciones de "colgar de", saltando la unidad que se mueve y sus descendientes. */
@@ -17,7 +18,7 @@ export function moveOptions(root: UnitNodeData, skipId: string, depth = 0): Move
 
 @Component({
   selector: 'app-unit-tree',
-  imports: [Button, Card, Dialog, EditUnit, NewUnit, SectionHeader, UnitNode],
+  imports: [Button, Card, Dialog, EditUnit, NewUnit, RestoreUnit, SectionHeader, UnitNode],
   templateUrl: './unit-tree.html',
   styleUrl: './unit-tree.scss',
 })
@@ -32,6 +33,8 @@ export class UnitTree {
   protected readonly editing = signal<Unit | null>(null);
   // Unidad pendiente de confirmar su eliminación; null = diálogo cerrado
   protected readonly removing = signal<Unit | null>(null);
+  // Nodo eliminado (con su subárbol) cuya restauración está en el wizard; null = diálogo cerrado
+  protected readonly restoring = signal<UnitNodeData | null>(null);
   protected readonly showDeleted = signal(false);
   protected readonly busy = signal(false);
   protected readonly actionError = signal<string | null>(null);
@@ -82,32 +85,31 @@ export class UnitTree {
     this.load();
   }
 
+  protected onRestoreOpenChange(open: boolean): void {
+    if (!open) {
+      this.restoring.set(null);
+      this.load();
+    }
+  }
+
   protected onRemoveAction(action: string): void {
     const unit = this.removing();
     if (action !== 'confirm' || !unit) {
       this.removing.set(null);
       return;
     }
-    this.run(this.api.remove(unit.id), 'No se pudo eliminar la unidad', () => this.removing.set(null));
-  }
-
-  protected onRestore(unit: Unit): void {
-    this.run(this.api.restore(unit.id), 'No se pudo restaurar la unidad');
-  }
-
-  private run(request: Observable<unknown>, fallback: string, then?: () => void): void {
     this.busy.set(true);
     this.actionError.set(null);
-    request.subscribe({
+    this.api.remove(unit.id).subscribe({
       next: () => {
         this.busy.set(false);
-        then?.();
+        this.removing.set(null);
         this.load();
       },
       error: (e: HttpErrorResponse) => {
         this.busy.set(false);
-        this.actionError.set(apiErrorMessage(e, fallback));
-        then?.();
+        this.removing.set(null);
+        this.actionError.set(apiErrorMessage(e, 'No se pudo eliminar la unidad'));
       },
     });
   }

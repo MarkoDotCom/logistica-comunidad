@@ -111,7 +111,7 @@ describe('UnitTree', () => {
     expect(el.querySelectorAll('.unit-node__row')).toHaveLength(2);
   });
 
-  it('should reload with includeDeleted when the checkbox is on and restore a deleted unit', async () => {
+  it('should reload with includeDeleted when the checkbox is on and open the restore wizard', async () => {
     const fixture = await render();
     const el = fixture.nativeElement as HTMLElement;
 
@@ -123,8 +123,17 @@ describe('UnitTree', () => {
     await fixture.whenStable();
 
     el.querySelectorAll('.unit-node__row')[3].querySelector<HTMLButtonElement>('.unit-node__actions button')!.click(); // Restaurar Edificio B
-    http.expectOne((r) => r.method === 'POST' && r.url.endsWith('/units/b/restore')).flush({ message: 'La unidad padre está eliminada; restaúrala primero' }, { status: 400, statusText: 'Bad Request' });
     await fixture.whenStable();
-    expect(el.querySelector('.ui-form__error')?.textContent).toContain('restaúrala primero');
+    const wizard = el.querySelector('app-restore-unit')!;
+    expect(wizard.textContent).toContain('Vas a restaurar Edificio B');
+
+    // Al cerrar el wizard se recarga el árbol, manteniendo "Mostrar eliminadas"
+    el.querySelectorAll<HTMLDialogElement>('dialog')[3].querySelector<HTMLButtonElement>('.ui-dialog__close')!.click();
+    await fixture.whenStable();
+    http.expectOne((r) => r.url.endsWith('/units')).flush([COMMUNITY]);
+    await fixture.whenStable();
+    http.expectOne((r) => r.urlWithParams.endsWith('/units/c/tree?includeDeleted=true')).flush(TREE);
+    await fixture.whenStable();
+    expect(el.querySelector('app-restore-unit')).toBeNull();
   });
 });

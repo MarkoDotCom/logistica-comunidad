@@ -19,7 +19,7 @@ export class UnitNode {
   readonly add = output<Unit>();
   readonly edit = output<Unit>();
   readonly remove = output<Unit>();
-  readonly restore = output<Unit>();
+  readonly restore = output<UnitNodeData>();
 
   protected readonly open = signal(true);
   protected readonly kindLabels = UNIT_KIND_LABELS;

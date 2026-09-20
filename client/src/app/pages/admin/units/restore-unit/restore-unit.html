@@ -1,0 +1,41 @@
+<div class="wizard">
+  @if (restored(); as unit) {
+    <ui-card heading="Unidad restaurada" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name"><ui-tag>{{ kindLabels[unit.kind] }}</ui-tag> {{ unitLabel(unit) }}</p>
+      @if (companions() > 0) {
+        <p class="ui-muted">Volvieron también las {{ companions() }} unidades que se eliminaron con ella.</p>
+      }
+      <p>Ya aparece de nuevo en el árbol.</p>
+    </ui-card>
+  } @else {
+    <ui-card heading="Restaurar unidad" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
+      @switch (step()) {
+        @case (0) {
+          <p>Vas a restaurar <strong>{{ unitLabel(node()) }}</strong> ({{ kindLabels[node().kind] }}), eliminada el {{ node().deletedAt | date: 'medium' }}.</p>
+          @if (companions() === 1) {
+            <p>Vuelve también la unidad que se eliminó con ella.</p>
+          } @else if (companions() > 1) {
+            <p>Vuelven también las <strong>{{ companions() }}</strong> unidades que se eliminaron con ella.</p>
+          }
+          <p class="ui-muted">Requisitos: la unidad de la que cuelga debe estar viva y su código «{{ node().code }}» debe seguir libre en ese nivel. Si no se cumple, aquí verás el motivo.</p>
+        }
+        @case (1) {
+          <dl class="wizard__summary">
+            <dt>Unidad</dt>
+            <dd>{{ unitLabel(node()) }}</dd>
+            <dt>Tipo</dt>
+            <dd>{{ kindLabels[node().kind] }}</dd>
+            <dt>Código</dt>
+            <dd>{{ node().code }}</dd>
+            <dt>Vuelven con ella</dt>
+            <dd>{{ companions() === 0 ? 'Ninguna' : companions() }}</dd>
+          </dl>
+          @if (error(); as error) {
+            <p class="ui-form__error">{{ error }}</p>
+          }
+        }
+      }
+    </ui-card>
+  }
+</div>

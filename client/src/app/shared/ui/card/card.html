@@ -1,0 +1,29 @@
+<div class="ui-card">
+  @if (heading()) {
+    <h3 class="ui-card__title">{{ heading() }}</h3>
+  }
+  @if (steps().length) {
+    <ui-stepper class="ui-card__stepper" [steps]="steps()" [step]="step()" />
+  }
+  <div class="ui-card__body">
+    @if (content()) {
+      <p class="ui-card__content">{{ content() }}</p>
+    }
+    <ng-content />
+  </div>
+  @if (actions().length || steps().length) {
+    <div class="ui-card__actions">
+      @for (item of actions(); track item.id) {
+        <ui-button [variant]="item.variant ?? 'primary'" [disabled]="item.disabled ?? false" (clicked)="action.emit(item.id)">
+          {{ item.label }}
+        </ui-button>
+      }
+      @if (steps().length) {
+        @if (step() > 0) {
+          <ui-button variant="secondary" (clicked)="prev()">Anterior</ui-button>
+        }
+        <ui-button [disabled]="!canAdvance()" (clicked)="next()">{{ isLastStep() ? 'Finalizar' : 'Siguiente' }}</ui-button>
+      }
+    </div>
+  }
+</div>

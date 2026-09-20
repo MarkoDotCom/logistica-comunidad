@@ -1,0 +1,13 @@
+<ol class="ui-stepper">
+  @for (label of steps(); track $index) {
+    <li
+      class="ui-stepper__item"
+      [class.ui-stepper__item--done]="$index < step()"
+      [class.ui-stepper__item--active]="$index === step()"
+      [attr.aria-current]="$index === step() ? 'step' : null"
+    >
+      <span class="ui-stepper__marker">{{ $index < step() ? '✓' : $index + 1 }}</span>
+      <span class="ui-stepper__label">{{ label }}</span>
+    </li>
+  }
+</ol>

@@ -1,0 +1,14 @@
+.unit-tree__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.unit-tree__list {
+  margin-top: 1.5rem;
+  border: 1px solid var(--ui-color-border);
+  border-bottom: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: var(--ui-color-surface);
+}

@@ -1,1 +1,193 @@
 /* You can add global styles to this file, and also import other style files */
+
+@mixin dark-theme {
+  color-scheme: dark;
+  --ui-color-bg: #0b1120;
+  --ui-color-surface: #111827;
+  --ui-color-border: #1f2937;
+  --ui-color-border-strong: #374151;
+  --ui-color-hover: #1f2937;
+  --ui-color-text: #f9fafb;
+  --ui-color-text-body: #d1d5db;
+  --ui-color-text-muted: #9ca3af;
+  --ui-color-primary: #60a5fa;
+  --ui-color-primary-hover: #3b82f6;
+  --ui-color-on-primary: #0b1120;
+  --ui-color-accent-bg: #172554;
+  --ui-color-accent-text: #93c5fd;
+  --ui-color-danger: #f87171;
+}
+
+:root {
+  color-scheme: light;
+  --ui-color-bg: #ffffff;
+  --ui-color-surface: #ffffff;
+  --ui-color-border: #e5e7eb;
+  --ui-color-border-strong: #d1d5db;
+  --ui-color-hover: #f3f4f6;
+  --ui-color-text: #111827;
+  --ui-color-text-body: #374151;
+  --ui-color-text-muted: #6b7280;
+  --ui-color-primary: #2563eb;
+  --ui-color-primary-hover: #1d4ed8;
+  --ui-color-on-primary: #ffffff;
+  --ui-color-accent-bg: #eff6ff;
+  --ui-color-accent-text: #1d4ed8;
+  --ui-color-danger: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    @include dark-theme;
+  }
+}
+
+:root[data-theme='dark'] {
+  @include dark-theme;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background-color: var(--ui-color-bg);
+  color: var(--ui-color-text);
+}
+
+// Formularios: clases globales para controles nativos (no hay componentes de formulario en shared/ui)
+.ui-field {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.ui-field__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ui-color-text-body);
+}
+
+.ui-input,
+.ui-select,
+.ui-textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--ui-color-border-strong);
+  border-radius: 0.5rem;
+  background-color: var(--ui-color-surface);
+  color: var(--ui-color-text);
+  font: inherit;
+
+  &:focus {
+    outline: 2px solid var(--ui-color-primary);
+    outline-offset: 1px;
+    border-color: var(--ui-color-primary);
+  }
+}
+
+.ui-textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.ui-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--ui-color-text-body);
+}
+
+.ui-form__error {
+  margin: 0.5rem 0;
+  color: var(--ui-color-danger);
+  font-size: 0.875rem;
+}
+
+.ui-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.ui-muted {
+  color: var(--ui-color-text-muted);
+}
+
+.ui-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+// Tablas: clases globales para <table> nativas (mismo criterio que los formularios)
+.ui-table-wrap {
+  overflow-x: auto;
+  margin-top: 1.5rem;
+}
+
+.ui-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--ui-color-border);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ui-color-text-muted);
+    white-space: nowrap;
+  }
+
+  td {
+    color: var(--ui-color-text-body);
+  }
+
+  tbody tr:hover {
+    background-color: var(--ui-color-hover);
+  }
+}
+
+.ui-table__actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+// Páginas con sesión (dentro de Shell)
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.page--narrow {
+  max-width: 720px;
+}
+
+.page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.page__back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  color: var(--ui-color-text-muted);
+  font-size: 0.875rem;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--ui-color-text);
+  }
+}

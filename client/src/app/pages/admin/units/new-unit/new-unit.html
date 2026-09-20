@@ -1,0 +1,77 @@
+<div class="wizard">
+  @if (created(); as unit) {
+    <ui-card heading="Unidad creada" [actions]="resultActions" (action)="onResult($event)">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name"><ui-tag>{{ kindLabels[unit.kind] }}</ui-tag> {{ unitLabel(unit) }}</p>
+      @if (parent(); as parent) {
+        <p class="ui-muted">Cuelga de {{ unitLabel(parent) }}.</p>
+      } @else {
+        <p class="ui-muted">Es una comunidad raíz. Ahora puedes agregarle edificios.</p>
+      }
+    </ui-card>
+  } @else {
+    <ui-card [heading]="parent() ? 'Nueva unidad' : 'Nueva comunidad'" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
+      <form [formGroup]="form">
+        @switch (step()) {
+          @case (0) {
+            @if (parent(); as parent) {
+              <p>Vas a agregar una unidad dentro de <strong>{{ unitLabel(parent) }}</strong> ({{ kindLabels[parent.kind] }}).</p>
+              <ol class="wizard__intro">
+                <li><strong>Datos:</strong> tipo, código y nombre.</li>
+                <li><strong>Confirmar:</strong> revisas y se crea.</li>
+              </ol>
+              <p class="ui-muted">El código debe ser único entre las unidades del mismo nivel.</p>
+            } @else {
+              <p>Vas a crear una <strong>comunidad</strong>, la raíz del árbol de unidades.</p>
+              <ol class="wizard__intro">
+                <li><strong>Datos:</strong> código y nombre.</li>
+                <li><strong>Confirmar:</strong> revisas y se crea.</li>
+              </ol>
+              <p class="ui-muted">Después le agregas edificios, departamentos y cuentas desde el árbol.</p>
+            }
+          }
+          @case (1) {
+            @if (parent()) {
+              <label class="ui-field">
+                <span class="ui-field__label">Tipo</span>
+                <select class="ui-select" formControlName="kind">
+                  @for (kind of kinds; track kind) {
+                    <option [value]="kind">{{ kindLabels[kind] }}</option>
+                  }
+                </select>
+              </label>
+            }
+            <label class="ui-field">
+              <span class="ui-field__label">Código</span>
+              <input class="ui-input" type="text" formControlName="code" placeholder="A, 101, GC…" />
+              @if (form.controls.code.touched && form.controls.code.invalid) {
+                <span class="ui-form__error">Obligatorio, máximo 50 caracteres.</span>
+              }
+            </label>
+            <label class="ui-field">
+              <span class="ui-field__label">Nombre (opcional)</span>
+              <input class="ui-input" type="text" formControlName="name" placeholder="Torre A" />
+            </label>
+          }
+          @case (2) {
+            <dl class="wizard__summary">
+              <dt>Tipo</dt>
+              <dd>{{ kindLabels[parent() ? value().kind! : 'community'] }}</dd>
+              <dt>Código</dt>
+              <dd>{{ value().code }}</dd>
+              <dt>Nombre</dt>
+              <dd>{{ value().name || '—' }}</dd>
+              @if (parent(); as parent) {
+                <dt>Cuelga de</dt>
+                <dd>{{ unitLabel(parent) }}</dd>
+              }
+            </dl>
+            @if (error(); as error) {
+              <p class="ui-form__error">{{ error }}</p>
+            }
+          }
+        }
+      </form>
+    </ui-card>
+  }
+</div>

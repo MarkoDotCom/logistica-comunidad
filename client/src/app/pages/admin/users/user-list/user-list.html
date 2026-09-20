@@ -1,0 +1,63 @@
+<main class="page">
+  <ui-section-header heading="Usuarios" />
+
+  <div class="user-list__toolbar">
+    <input class="ui-input user-list__search" type="search" placeholder="Buscar por nombre o email" aria-label="Buscar usuarios" (input)="onSearch($event)" />
+    <ui-button (clicked)="newUserOpen.set(true)">+ Nuevo usuario</ui-button>
+  </div>
+
+  <ui-dialog [(open)]="newUserOpen" (openChange)="onNewUserOpenChange($event)">
+    @if (newUserOpen()) {
+      <app-new-user (closed)="newUserOpen.set(false)" />
+    }
+  </ui-dialog>
+
+  <ui-dialog [open]="editingId() !== null" (openChange)="onEditOpenChange($event)">
+    @if (editingId(); as id) {
+      <app-edit-user [userId]="id" (closed)="onEditOpenChange(false)" />
+    }
+  </ui-dialog>
+
+  @if (failed()) {
+    <p class="ui-form__error">No se pudieron cargar los usuarios.</p>
+  } @else if (filtered(); as users) {
+    @if (users.length === 0) {
+      <p class="ui-muted">{{ query() ? 'Ningún usuario coincide con la búsqueda.' : 'Todavía no hay usuarios.' }}</p>
+    } @else {
+      <div class="ui-table-wrap">
+        <table class="ui-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (user of users; track user.id) {
+              <tr>
+                <td>{{ user.fullName }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.phone || '—' }}</td>
+                <td>
+                  @if (user.isActive) {
+                    <ui-tag>Activo</ui-tag>
+                  } @else {
+                    <span class="ui-muted">Inactivo</span>
+                  }
+                </td>
+                <td class="ui-table__actions">
+                  <ui-button variant="secondary" (clicked)="editingId.set(user.id)">Modificar</ui-button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+</main>

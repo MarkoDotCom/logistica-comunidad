@@ -109,6 +109,11 @@ export class AppUserTable {
     return row && toUserWithContracts(row);
   }
 
+  async countByActive(): Promise<{ total: number; active: number }> {
+    const [total, active] = await Promise.all([this.prisma.app_user.count(), this.prisma.app_user.count({ where: { is_active: true } })]);
+    return { total, active };
+  }
+
   async existsByEmail(email: string, exceptId?: string): Promise<boolean> {
     return (await this.prisma.app_user.count({ where: { email, ...(exceptId ? { id: { not: exceptId } } : {}) } })) > 0;
   }

@@ -1,0 +1,11 @@
+.ui-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background-color: var(--ui-color-accent-bg);
+  color: var(--ui-color-accent-text);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}

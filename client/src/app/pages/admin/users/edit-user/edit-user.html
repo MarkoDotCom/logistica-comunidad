@@ -1,0 +1,77 @@
+<div class="wizard">
+  @if (loadFailed()) {
+    <ui-card heading="Modificar usuario" content="No se pudo cargar el usuario." [actions]="resultActions" (action)="closed.emit()" />
+  } @else if (updated(); as user) {
+    <ui-card heading="Usuario actualizado" [actions]="resultActions" (action)="closed.emit()">
+      <ui-stepper class="wizard__stepper" [steps]="steps" [step]="steps.length" />
+      <p class="wizard__result-name">{{ user.fullName }}</p>
+      <p class="ui-muted">{{ user.email }} · {{ user.isActive ? 'Activo' : 'Inactivo' }}</p>
+    </ui-card>
+  } @else if (user(); as user) {
+    <ui-card heading="Modificar usuario" [steps]="steps" [(step)]="step" [canAdvance]="canAdvance()" (finish)="finish()">
+      <form [formGroup]="form">
+        @switch (step()) {
+          @case (0) {
+            <p>Vas a modificar a <strong>{{ user.fullName }}</strong> ({{ user.email }}).</p>
+            @if (user.contracts.length === 0) {
+              <p class="ui-muted">No tiene contratos con ninguna unidad.</p>
+            } @else {
+              <p>Contratos:</p>
+              <ul class="wizard__list">
+                @for (c of user.contracts; track c.id) {
+                  <li>
+                    <ui-tag>{{ contractLabels[c.type] }}</ui-tag>
+                    {{ unitLabel(c.unit) }}
+                    <span class="ui-muted">· desde {{ c.startsAt }}{{ c.endsAt ? ' hasta ' + c.endsAt : '' }}</span>
+                  </li>
+                }
+              </ul>
+            }
+            <p class="ui-muted">Los contratos no se cambian desde aquí.</p>
+          }
+          @case (1) {
+            <label class="ui-field">
+              <span class="ui-field__label">Nombre completo</span>
+              <input class="ui-input" type="text" formControlName="fullName" autocomplete="name" />
+              @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
+                <span class="ui-form__error">Mínimo 2 caracteres.</span>
+              }
+            </label>
+            <label class="ui-field">
+              <span class="ui-field__label">Email</span>
+              <input class="ui-input" type="email" formControlName="email" autocomplete="email" />
+              @if (form.controls.email.touched && form.controls.email.invalid) {
+                <span class="ui-form__error">Escribe un email válido.</span>
+              }
+            </label>
+            <label class="ui-field">
+              <span class="ui-field__label">Teléfono</span>
+              <input class="ui-input" type="tel" formControlName="phone" autocomplete="tel" />
+            </label>
+            <label class="ui-checkbox">
+              <input type="checkbox" formControlName="isActive" />
+              Usuario activo
+            </label>
+          }
+          @case (2) {
+            <dl class="wizard__summary">
+              <dt>Nombre</dt>
+              <dd>{{ value().fullName }}</dd>
+              <dt>Email</dt>
+              <dd>{{ value().email }}</dd>
+              <dt>Teléfono</dt>
+              <dd>{{ value().phone || '—' }}</dd>
+              <dt>Estado</dt>
+              <dd>{{ value().isActive ? 'Activo' : 'Inactivo' }}</dd>
+            </dl>
+            @if (error(); as error) {
+              <p class="ui-form__error">{{ error }}</p>
+            }
+          }
+        }
+      </form>
+    </ui-card>
+  } @else {
+    <ui-card heading="Modificar usuario" content="Cargando…" />
+  }
+</div>

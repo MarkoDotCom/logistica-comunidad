@@ -1,0 +1,13 @@
+<header class="admin__header">
+  <a class="admin__brand" routerLink="/admin">Logística Comunidad · Admin</a>
+
+  <nav class="admin__nav" aria-label="Secciones de administración">
+    <a class="admin__link" routerLink="/admin" routerLinkActive="admin__link--active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+    <a class="admin__link" routerLink="/admin/usuarios" routerLinkActive="admin__link--active">Usuarios</a>
+    <a class="admin__link" routerLink="/admin/unidades" routerLinkActive="admin__link--active">Unidades</a>
+  </nav>
+
+  <ui-theme-toggle />
+</header>
+
+<router-outlet />

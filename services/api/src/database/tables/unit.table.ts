@@ -49,6 +49,14 @@ export class UnitTable {
     return rows.map(toUnit);
   }
 
+  /** Unidades activas por tipo. */
+  async countByKind(): Promise<Record<unit_kind, number>> {
+    const groups = await this.prisma.unit.groupBy({ by: ['kind'], where: { is_active: true }, _count: { _all: true } });
+    const counts = { community: 0, building: 0, apartment: 0, account: 0 };
+    for (const g of groups) counts[g.kind] = g._count._all;
+    return counts;
+  }
+
   async find(id: string): Promise<UnitDto | null> {
     const row = await this.prisma.unit.findUnique({ where: { id } });
     return row && toUnit(row);

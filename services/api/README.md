@@ -20,6 +20,7 @@ src/
 └── rest/                # endpoints HTTP; inyecta las tablas, nunca Prisma
     ├── api-response.*   # envoltorio único de respuestas (éxito y error)
     ├── health/
+    ├── summary/
     ├── users/
     └── units/
 ```
@@ -40,6 +41,7 @@ Toda respuesta sale con el mismo envoltorio. El cliente puede enviar `x-request-
 | Método | Ruta                   | Descripción |
 |--------|------------------------|-------------|
 | GET    | `/health`              | Estado de la API y la base |
+| GET    | `/summary`             | Métricas del dashboard: unidades activas por tipo, usuarios (total y activos), contratos vigentes y cuántos vencen en 30 días |
 | GET    | `/users?search=`       | Lista usuarios; `search` filtra por nombre o email |
 | GET    | `/users/:id`           | Usuario con sus contratos y las unidades de cada uno |
 | POST   | `/users`               | Crea usuario (`email`, `fullName`, `phone?`, `externalAuthId?`) |

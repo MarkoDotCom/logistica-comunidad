@@ -1,0 +1,41 @@
+.admin__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--ui-color-border);
+  background-color: var(--ui-color-surface);
+}
+
+.admin__brand {
+  font-weight: 700;
+  color: var(--ui-color-text);
+  text-decoration: none;
+}
+
+.admin__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.admin__link {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.5rem;
+  color: var(--ui-color-text-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+
+  &:hover {
+    background-color: var(--ui-color-hover);
+    color: var(--ui-color-text);
+  }
+
+  &--active {
+    background-color: var(--ui-color-accent-bg);
+    color: var(--ui-color-accent-text);
+  }
+}

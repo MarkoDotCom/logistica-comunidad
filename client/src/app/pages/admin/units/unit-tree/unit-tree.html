@@ -1,0 +1,35 @@
+<main class="page">
+  <ui-section-header heading="Unidades" subtitle="Comunidades, edificios, departamentos y cuentas" />
+
+  <div class="unit-tree__toolbar">
+    <ui-button (clicked)="newParent.set(null)">+ Nueva comunidad</ui-button>
+  </div>
+
+  <ui-dialog [open]="newParent() !== undefined" (openChange)="onNewOpenChange($event)">
+    @if (newParent() !== undefined) {
+      <app-new-unit [parent]="newParent() ?? null" (closed)="onNewOpenChange(false)" />
+    }
+  </ui-dialog>
+
+  <ui-dialog [open]="editing() !== null" (openChange)="onEditOpenChange($event)">
+    @if (editing(); as unit) {
+      <app-edit-unit [unit]="unit" [moveOptions]="moveOptions()" (closed)="onEditOpenChange(false)" />
+    }
+  </ui-dialog>
+
+  @if (failed()) {
+    <p class="ui-form__error">No se pudieron cargar las unidades.</p>
+  } @else if (trees(); as trees) {
+    @if (trees.length === 0) {
+      <p class="ui-muted">Todavía no hay comunidades. Crea la primera con el botón de arriba.</p>
+    } @else {
+      <div class="unit-tree__list">
+        @for (tree of trees; track tree.id) {
+          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" />
+        }
+      </div>
+    }
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+</main>

@@ -1,0 +1,26 @@
+<main class="page">
+  <ui-section-header heading="Inicio" subtitle="Resumen de la comunidad" />
+
+  @if (failed()) {
+    <p class="ui-form__error">No se pudo cargar el resumen.</p>
+  } @else if (summary()) {
+    <div class="home__metrics">
+      @for (m of metrics(); track m.label) {
+        <a class="home__metric" [routerLink]="m.link">
+          <span class="home__value">{{ m.value | number }}</span>
+          <span class="home__label">{{ m.label }}</span>
+          @if (m.hint) {
+            <span class="home__hint">{{ m.hint }}</span>
+          }
+        </a>
+      }
+    </div>
+  } @else {
+    <p class="ui-muted">Cargando…</p>
+  }
+
+  <div class="page__grid">
+    <ui-card heading="Usuarios" content="Crear, buscar y modificar personas, y ver los contratos de cada una." [actions]="goActions" (action)="go('/admin/usuarios')" />
+    <ui-card heading="Unidades" content="Árbol de comunidades, edificios, departamentos y cuentas. Crear, modificar y mover unidades." [actions]="goActions" (action)="go('/admin/unidades')" />
+  </div>
+</main>

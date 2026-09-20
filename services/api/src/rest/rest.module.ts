@@ -3,12 +3,13 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ApiResponseFilter } from './api-response.filter.js';
 import { ApiResponseInterceptor } from './api-response.interceptor.js';
 import { HealthController } from './health/health.controller.js';
+import { SummaryModule } from './summary/summary.module.js';
 import { UnitsModule } from './units/units.module.js';
 import { UsersModule } from './users/users.module.js';
 
 // Endpoints HTTP de negocio. Usa DatabaseModule; nunca al revés.
 @Module({
-  imports: [UsersModule, UnitsModule],
+  imports: [UsersModule, UnitsModule, SummaryModule],
   controllers: [HealthController],
   // Toda respuesta, éxito o error, sale con el mismo envoltorio; ver api-response.ts
   providers: [

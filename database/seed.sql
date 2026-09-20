@@ -1,0 +1,1 @@
+-- Datos de ejemplo de logistica-comunidad. Pendiente de definir.

@@ -1,0 +1,1 @@
+-- Esquema de logistica-comunidad. Pendiente de definir.

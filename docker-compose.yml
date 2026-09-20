@@ -1,0 +1,76 @@
+# Entorno de desarrollo de logistica-comunidad.
+#   docker compose up -d db        # solo la base de datos
+#   docker compose up              # base + API (http://localhost:3001) + cliente Angular (http://localhost:4201) + landing (http://localhost:4301)
+#   docker compose down -v         # borra el volumen: schema.sql y seed.sql se reejecutan al subir
+# Variables en .env (ver .env.example).
+#
+# api y client corren con tu uid y usan el node_modules del host (mismo Linux x64/glibc), así lo que
+# generan (dist, generated, .angular) queda con tu usuario. Requiere `npm install` previo en cada carpeta.
+
+# Nombre del proyecto compose (contenedores, red y volúmenes), independiente del nombre de la carpeta
+name: logistica-comunidad
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # Se ejecutan en orden alfabético solo cuando el volumen está vacío
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: node:24-bookworm-slim
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    # Regenera el cliente Prisma por si cambió schema.prisma
+    command: sh -c "npx prisma generate && exec npm run start:dev"
+    environment:
+      HOME: /tmp
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      API_PORT: 3000
+    ports:
+      - "${API_PORT:-3001}:3000"
+    volumes:
+      - ./services/api:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    image: node:24-bookworm-slim
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    environment:
+      HOME: /tmp
+    command: npx ng serve --host 0.0.0.0
+    ports:
+      - "${CLIENT_PORT:-4201}:4200"
+    volumes:
+      - ./client:/app
+
+  landing:
+    image: node:24-bookworm-slim
+    user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+    working_dir: /app
+    environment:
+      HOME: /tmp
+    command: npx vite --host 0.0.0.0 --port 4300
+    ports:
+      - "${LANDING_PORT:-4301}:4300"
+    volumes:
+      - ./landing:/app
+
+volumes:
+  db-data:

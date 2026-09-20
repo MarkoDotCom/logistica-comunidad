@@ -1,10 +1,37 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../generated"
+  provider        = "prisma-client"
+  output          = "../generated"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["public", "units"]
 }
 
-// Modelos pendientes: se obtienen de database/schema.sql con `npx prisma db pull`.
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model unit {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parent_id  String?   @db.Uuid
+  kind       unit_kind
+  code       String    @unique(map: "unit_root_code_uq", where: raw("(parent_id IS NULL)"))
+  name       String?
+  is_active  Boolean   @default(true)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at DateTime  @default(now()) @db.Timestamptz(6)
+  parent     unit?     @relation("unit_parent", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  children   unit[]    @relation("unit_parent")
+
+  @@unique([parent_id, code], map: "unit_sibling_code_uq", where: raw("(parent_id IS NOT NULL)"))
+  @@index([kind])
+  @@schema("units")
+}
+
+enum unit_kind {
+  community
+  building
+  apartment
+  account
+
+  @@schema("public")
+}

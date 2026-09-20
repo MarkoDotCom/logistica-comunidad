@@ -1,1 +1,32 @@
--- Datos de ejemplo de logistica-comunidad. Pendiente de definir.
+-- =============================================================================
+-- Datos de ejemplo — ejecutar después de schema.sql
+--   psql -d <db> -f seed.sql
+-- UUIDs fijos para poder consultarlos a mano:
+--   1... comunidad | 2... edificios | 3... departamentos | 4... cuentas
+-- =============================================================================
+BEGIN;
+
+-- Comunidad ------------------------------------------------------------------
+INSERT INTO units.unit (id, parent_id, kind, code, name) VALUES
+  ('10000000-0000-4000-8000-000000000001', NULL, 'community', 'los-alamos', 'Condominio Los Álamos');
+
+-- Edificios ------------------------------------------------------------------
+INSERT INTO units.unit (id, parent_id, kind, code, name) VALUES
+  ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'building', 'A', 'Torre A'),
+  ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 'building', 'B', 'Torre B');
+
+-- Departamentos --------------------------------------------------------------
+INSERT INTO units.unit (id, parent_id, kind, code, name) VALUES
+  ('30000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'apartment', '101', NULL),
+  ('30000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001', 'apartment', '102', NULL),
+  ('30000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000002', 'apartment', '101', NULL),
+  ('30000000-0000-4000-8000-000000000004', '20000000-0000-4000-8000-000000000002', 'apartment', '201', NULL);
+
+-- Cuentas de cobro (una por departamento) ------------------------------------
+INSERT INTO units.unit (id, parent_id, kind, code, name) VALUES
+  ('40000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', 'account', 'GC', 'Gastos comunes A-101'),
+  ('40000000-0000-4000-8000-000000000002', '30000000-0000-4000-8000-000000000002', 'account', 'GC', 'Gastos comunes A-102'),
+  ('40000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000003', 'account', 'GC', 'Gastos comunes B-101'),
+  ('40000000-0000-4000-8000-000000000004', '30000000-0000-4000-8000-000000000004', 'account', 'GC', 'Gastos comunes B-201');
+
+COMMIT;

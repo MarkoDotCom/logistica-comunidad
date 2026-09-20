@@ -11,17 +11,17 @@ datasource db {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model unit {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  parent_id   String?       @db.Uuid
-  kind        unit_kind
-  code        String        @unique(map: "unit_root_code_uq", where: raw("(parent_id IS NULL)"))
-  name        String?
-  is_active   Boolean       @default(true)
-  created_at  DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime      @default(now()) @db.Timestamptz(6)
-  parent      unit?         @relation("unit_parent", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  children    unit[]        @relation("unit_parent")
-  members     unit_member[]
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  parent_id  String?    @db.Uuid
+  kind       unit_kind
+  code       String     @unique(map: "unit_root_code_uq", where: raw("(parent_id IS NULL)"))
+  name       String?
+  is_active  Boolean    @default(true)
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at DateTime   @default(now()) @db.Timestamptz(6)
+  parent     unit?      @relation("unit_parent", fields: [parent_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  children   unit[]     @relation("unit_parent")
+  contracts  contract[]
 
   @@unique([parent_id, code], map: "unit_sibling_code_uq", where: raw("(parent_id IS NOT NULL)"))
   @@index([kind])
@@ -29,29 +29,36 @@ model unit {
 }
 
 model app_user {
-  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email            String        @unique @db.Citext
-  external_auth_id String?       @unique
+  id               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email            String     @unique @db.Citext
+  external_auth_id String?    @unique
   full_name        String
   phone            String?
-  is_active        Boolean       @default(true)
-  created_at       DateTime      @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime      @default(now()) @db.Timestamptz(6)
-  memberships      unit_member[]
+  is_active        Boolean    @default(true)
+  created_at       DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime   @default(now()) @db.Timestamptz(6)
+  contracts        contract[]
 
   @@schema("users")
 }
 
-model unit_member {
-  unit_id    String    @db.Uuid
-  user_id    String    @db.Uuid
-  role       unit_role
-  created_at DateTime  @default(now()) @db.Timestamptz(6)
-  unit       unit      @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  user       app_user  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model contract {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  unit_id      String        @db.Uuid
+  user_id      String        @db.Uuid
+  type         contract_type
+  starts_at    DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  ends_at      DateTime?     @db.Date
+  document_url String?
+  notes        String?
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime      @default(now()) @db.Timestamptz(6)
+  unit         unit          @relation(fields: [unit_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         app_user      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([unit_id, user_id, role])
-  @@index([user_id], map: "unit_member_user_idx")
+  @@index([unit_id], map: "contract_unit_idx")
+  @@index([user_id], map: "contract_user_idx")
   @@schema("users")
 }
 
@@ -64,11 +71,11 @@ enum unit_kind {
   @@schema("public")
 }
 
-enum unit_role {
-  admin
-  owner
-  tenant
-  staff
+enum contract_type {
+  ownership
+  lease
+  administration
+  employment
 
   @@schema("public")
 }

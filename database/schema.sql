@@ -1,21 +1,22 @@
 -- =============================================================================
 -- Gestión logística de comunidad de vivienda — esquema PostgreSQL 13+
--- Esquemas: units (árbol de unidades), users (cuentas y membresías) y public (enums y función compartida)
+-- Esquemas: units (árbol de unidades), users (cuentas y contratos) y public (enums y función compartida)
 -- Ejecutar: psql -d <db> -f schema.sql
 -- =============================================================================
 
 CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE SCHEMA units;   -- comunidad, edificios, departamentos, cuentas
-CREATE SCHEMA users;   -- cuentas de usuario y su rol sobre las unidades
+CREATE SCHEMA users;   -- cuentas de usuario y sus contratos con las unidades
 
 -- -----------------------------------------------------------------------------
 -- Tipos enumerados
 -- -----------------------------------------------------------------------------
 -- Para agregar un nivel (torre, piso, estacionamiento...): ALTER TYPE unit_kind ADD VALUE '...';
 CREATE TYPE unit_kind AS ENUM ('community', 'building', 'apartment', 'account');
--- admin = administrador de la comunidad, owner = propietario, tenant = arrendatario, staff = conserje/personal
-CREATE TYPE unit_role AS ENUM ('admin', 'owner', 'tenant', 'staff');
+-- Qué vincula a una persona con una unidad: ownership = propietario, lease = arrendatario,
+-- administration = administrador de la comunidad, employment = conserje/personal
+CREATE TYPE contract_type AS ENUM ('ownership', 'lease', 'administration', 'employment');
 
 -- -----------------------------------------------------------------------------
 -- Función compartida para updated_at
@@ -55,7 +56,7 @@ CREATE TRIGGER unit_updated_at BEFORE UPDATE ON units.unit
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- =============================================================================
--- 2. Usuarios y membresías
+-- 2. Usuarios y contratos
 -- =============================================================================
 
 CREATE TABLE users.app_user (
@@ -72,13 +73,24 @@ CREATE TABLE users.app_user (
 CREATE TRIGGER app_user_updated_at BEFORE UPDATE ON users.app_user
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- Rol de un usuario sobre una unidad. El rol aplica a la unidad y a todo su subárbol:
--- admin sobre la community, owner/tenant sobre un apartment, staff sobre community o building.
-CREATE TABLE users.unit_member (
-  unit_id    uuid NOT NULL REFERENCES units.unit(id) ON DELETE CASCADE,
-  user_id    uuid NOT NULL REFERENCES users.app_user(id) ON DELETE CASCADE,
-  role       unit_role NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  PRIMARY KEY (unit_id, user_id, role)
+-- Contrato: la relación entre una persona y una unidad. Aplica a la unidad y a todo su subárbol
+-- (administration sobre la community, ownership/lease sobre un apartment, employment sobre community o building).
+-- Una persona puede tener varios contratos con la misma unidad a lo largo del tiempo; el vigente es el que cubre hoy.
+CREATE TABLE users.contract (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  unit_id      uuid NOT NULL REFERENCES units.unit(id) ON DELETE CASCADE,
+  user_id      uuid NOT NULL REFERENCES users.app_user(id) ON DELETE CASCADE,
+  type         contract_type NOT NULL,
+  starts_at    date NOT NULL DEFAULT current_date,
+  ends_at      date,                            -- NULL = vigente sin término
+  document_url text,                            -- contrato firmado (PDF en storage)
+  notes        text,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT contract_dates CHECK (ends_at IS NULL OR ends_at >= starts_at)
 );
-CREATE INDEX unit_member_user_idx ON users.unit_member (user_id);
+CREATE INDEX contract_unit_idx ON users.contract (unit_id);
+CREATE INDEX contract_user_idx ON users.contract (user_id);
+
+CREATE TRIGGER contract_updated_at BEFORE UPDATE ON users.contract
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();

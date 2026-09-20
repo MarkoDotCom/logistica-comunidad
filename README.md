@@ -18,4 +18,4 @@ docker compose up          # api :3001, client :4201, landing :4301
 
 ## Estado
 
-Apps generadas (Angular 21 zoneless + SCSS, NestJS 12 + Prisma 7 con adaptador pg, Vite 8 + Sass). Modelo de datos inicial en `database/` (árbol de unidades, usuarios y membresías). Pendiente: alcance funcional y endpoints. Requiere `npm install` en `client/`, `services/api/` y `landing/`.
+Apps generadas (Angular 21 zoneless + SCSS, NestJS 12 + Prisma 7 con adaptador pg, Vite 8 + Sass). Modelo de datos inicial en `database/` (árbol de unidades, usuarios y contratos). Pendiente: alcance funcional y endpoints. Requiere `npm install` en `client/`, `services/api/` y `landing/`.

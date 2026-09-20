@@ -48,7 +48,9 @@
               }
             </td>
             <td class="ui-table__actions">
-              <ui-button variant="secondary" (clicked)="editing.set(c)">Modificar</ui-button>
+              @if (canWrite) {
+                <ui-button variant="secondary" (clicked)="editing.set(c)">Modificar</ui-button>
+              }
             </td>
           </tr>
         }

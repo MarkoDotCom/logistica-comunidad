@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import { provideRouter } from '@angular/router';
 import type { UnitDetail } from '../../../../core/units.api';
 import { ApartmentDetail } from './apartment-detail';
@@ -21,7 +22,7 @@ const DETAIL: UnitDetail = {
 
 describe('ApartmentDetail', () => {
   it('should show the path, current owners and tenants, accounts and every contract with its status', async () => {
-    await TestBed.configureTestingModule({ imports: [ApartmentDetail], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [ApartmentDetail], providers: [provideSessionWith(ALL_PERMISSIONS), provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
     const http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(ApartmentDetail);
     fixture.componentRef.setInput('id', 'a101');

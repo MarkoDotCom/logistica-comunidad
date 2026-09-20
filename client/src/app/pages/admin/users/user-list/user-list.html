@@ -3,7 +3,9 @@
 
   <div class="user-list__toolbar">
     <input class="ui-input user-list__search" type="search" placeholder="Buscar por nombre o email" aria-label="Buscar usuarios" (input)="onSearch($event)" />
-    <ui-button (clicked)="newUserOpen.set(true)">+ Nuevo usuario</ui-button>
+    @if (canWrite) {
+      <ui-button (clicked)="newUserOpen.set(true)">+ Nuevo usuario</ui-button>
+    }
   </div>
 
   <ui-dialog [(open)]="newUserOpen" (openChange)="onNewUserOpenChange($event)">
@@ -61,7 +63,9 @@
                   }
                 </td>
                 <td class="ui-table__actions">
-                  <ui-button variant="secondary" (clicked)="editingId.set(user.id)">Modificar</ui-button>
+                  @if (canWrite) {
+                    <ui-button variant="secondary" (clicked)="editingId.set(user.id)">Modificar</ui-button>
+                  }
                 </td>
               </tr>
             }

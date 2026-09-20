@@ -1,10 +1,16 @@
-<div class="unit-level__toolbar">
-  <label class="ui-checkbox">
-    <input type="checkbox" [checked]="showDeleted()" (change)="onShowDeletedChange($event)" />
-    Mostrar eliminadas
-  </label>
-  <ui-button (clicked)="newOpen.set(true)">+ {{ newLabel() }}</ui-button>
-</div>
+@if (canWrite || canDelete) {
+  <div class="unit-level__toolbar">
+    @if (canDelete) {
+      <label class="ui-checkbox">
+        <input type="checkbox" [checked]="showDeleted()" (change)="onShowDeletedChange($event)" />
+        Mostrar eliminadas
+      </label>
+    }
+    @if (canWrite) {
+      <ui-button (clicked)="newOpen.set(true)">+ {{ newLabel() }}</ui-button>
+    }
+  </div>
+}
 
 <ui-dialog [open]="newOpen()" (openChange)="$event || onDialogClose('new')">
   @if (newOpen()) {
@@ -38,7 +44,7 @@
   <p class="ui-form__error">No se pudieron cargar las unidades.</p>
 } @else if (units(); as units) {
   @if (units.length === 0) {
-    <p class="ui-muted">Todavía no hay {{ plurals[childKind()].toLowerCase() }} aquí. Crea la primera con el botón de arriba.</p>
+    <p class="ui-muted">Todavía no hay {{ plurals[childKind()].toLowerCase() }} aquí.@if (canWrite) { Crea la primera con el botón de arriba.}</p>
   } @else {
     <div class="ui-table-wrap">
       <table class="ui-table">
@@ -78,13 +84,19 @@
               </td>
               <td class="ui-table__actions">
                 @if (unit.deletedAt) {
-                  <ui-button variant="secondary" (clicked)="openRestore(unit)">Restaurar</ui-button>
+                  @if (canDelete) {
+                    <ui-button variant="secondary" (clicked)="openRestore(unit)">Restaurar</ui-button>
+                  }
                 } @else {
                   @if (route(unit); as link) {
                     <a class="unit-level__open" [routerLink]="link">Abrir</a>
                   }
-                  <ui-button variant="secondary" (clicked)="editing.set(unit)">Modificar</ui-button>
-                  <ui-button variant="ghost" (clicked)="openRemove(unit)">Eliminar</ui-button>
+                  @if (canWrite) {
+                    <ui-button variant="secondary" (clicked)="editing.set(unit)">Modificar</ui-button>
+                  }
+                  @if (canDelete) {
+                    <ui-button variant="ghost" (clicked)="openRemove(unit)">Eliminar</ui-button>
+                  }
                 }
               </td>
             </tr>

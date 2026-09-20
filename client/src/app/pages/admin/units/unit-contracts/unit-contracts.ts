@@ -1,6 +1,7 @@
-import { Component, computed, input, output, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import type { Contract } from '../../../../core/contracts.api';
 import { allowedContractTypes, CONTRACT_STATUS_LABELS, CONTRACT_TYPE_LABELS, contractStatus } from '../../../../core/labels';
+import { Session } from '../../../../core/session';
 import type { Unit } from '../../../../core/units.api';
 import { Button, Dialog, Tag } from '../../../../shared/ui';
 import { ContractWizard } from '../contract-wizard/contract-wizard';
@@ -14,6 +15,8 @@ import { ContractWizard } from '../contract-wizard/contract-wizard';
   styleUrl: './unit-contracts.scss',
 })
 export class UnitContracts {
+  private readonly session = inject(Session);
+
   readonly unit = input.required<Unit>();
   readonly contracts = input.required<Contract[]>();
   readonly changed = output<void>();
@@ -23,8 +26,9 @@ export class UnitContracts {
   protected readonly typeLabels = CONTRACT_TYPE_LABELS;
   protected readonly statusLabels = CONTRACT_STATUS_LABELS;
   protected readonly status = contractStatus;
-  // Sin tipos posibles (cuentas) o con la unidad eliminada no se ofrece crear
-  protected readonly canCreate = computed(() => allowedContractTypes(this.unit().kind).length > 0 && !this.unit().deletedAt);
+  protected readonly canWrite = this.session.can('contracts.write');
+  // Sin permiso, sin tipos posibles (cuentas) o con la unidad eliminada no se ofrece crear
+  protected readonly canCreate = computed(() => this.canWrite && allowedContractTypes(this.unit().kind).length > 0 && !this.unit().deletedAt);
 
   protected onDialogClose(): void {
     this.newOpen.set(false);

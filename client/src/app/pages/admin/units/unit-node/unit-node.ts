@@ -15,6 +15,8 @@ import { Button, Tag } from '../../../../shared/ui';
 export class UnitNode {
   readonly node = input.required<UnitNodeData>();
   readonly depth = input(0);
+  readonly canWrite = input(false);
+  readonly canDelete = input(false);
 
   readonly add = output<Unit>();
   readonly edit = output<Unit>();

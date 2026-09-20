@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { forkJoin, of, switchMap } from 'rxjs';
 import { canNest, unitLabel } from '../../../../core/labels';
+import { Session } from '../../../../core/session';
 import { UnitsApi, type Unit, type UnitKind, type UnitNode as UnitNodeData } from '../../../../core/units.api';
 import { Button, Dialog, SectionHeader } from '../../../../shared/ui';
 import { EditUnit, type MoveOption } from '../edit-unit/edit-unit';
@@ -29,7 +30,10 @@ export function moveOptions(root: UnitNodeData, skipId: string, kind: UnitKind, 
 })
 export class UnitTree {
   private readonly api = inject(UnitsApi);
+  private readonly session = inject(Session);
 
+  protected readonly canWrite = this.session.can('units.write');
+  protected readonly canDelete = this.session.can('units.delete');
   protected readonly trees = signal<UnitNodeData[] | null>(null);
   protected readonly failed = signal(false);
   protected readonly showDeleted = signal(false);

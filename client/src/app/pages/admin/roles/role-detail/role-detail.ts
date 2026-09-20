@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { permissionLabel } from '../../../../core/labels';
 import { type RoleDetail as RoleDetailData, RolesApi } from '../../../../core/roles.api';
+import { Session } from '../../../../core/session';
 import { Breadcrumb, type BreadcrumbItem, Button, Dialog, SectionHeader, Tag } from '../../../../shared/ui';
 import { AddRoleUser } from '../add-role-user/add-role-user';
 import { RemoveRoleUser } from '../remove-role-user/remove-role-user';
@@ -17,7 +18,9 @@ type RoleUser = RoleDetailData['users'][number];
 })
 export class RoleDetail {
   private readonly api = inject(RolesApi);
+  private readonly session = inject(Session);
 
+  protected readonly canWrite = this.session.can('roles.write');
   readonly id = input.required<string>();
 
   protected readonly role = signal<RoleDetailData | null>(null);

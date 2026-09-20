@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import type { Unit, UnitNode } from '../../../../core/units.api';
 import { polyfillDialog } from '../../../../shared/ui/dialog/dialog.testing';
 import { moveOptions, UnitTree } from './unit-tree';
@@ -36,7 +37,7 @@ describe('UnitTree', () => {
   beforeAll(polyfillDialog);
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [UnitTree], providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [UnitTree], providers: [provideSessionWith(ALL_PERMISSIONS), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
     http = TestBed.inject(HttpTestingController);
   });
 

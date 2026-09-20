@@ -1,13 +1,19 @@
 <main class="page">
   <ui-section-header heading="Árbol de unidades" subtitle="Vista global: aquí se mueven unidades de rama y se restauran las eliminadas" />
 
-  <div class="unit-tree__toolbar">
-    <label class="ui-checkbox">
-      <input type="checkbox" [checked]="showDeleted()" (change)="onShowDeletedChange($event)" />
-      Mostrar eliminadas
-    </label>
-    <ui-button (clicked)="newParent.set(null)">+ Nueva comunidad</ui-button>
-  </div>
+  @if (canWrite || canDelete) {
+    <div class="unit-tree__toolbar">
+      @if (canDelete) {
+        <label class="ui-checkbox">
+          <input type="checkbox" [checked]="showDeleted()" (change)="onShowDeletedChange($event)" />
+          Mostrar eliminadas
+        </label>
+      }
+      @if (canWrite) {
+        <ui-button (clicked)="newParent.set(null)">+ Nueva comunidad</ui-button>
+      }
+    </div>
+  }
 
   <ui-dialog [open]="newParent() !== undefined" (openChange)="$event || onDialogClose('new')">
     @if (newParent() !== undefined) {
@@ -37,11 +43,11 @@
     <p class="ui-form__error">No se pudieron cargar las unidades.</p>
   } @else if (trees(); as trees) {
     @if (trees.length === 0) {
-      <p class="ui-muted">Todavía no hay comunidades. Crea la primera con el botón de arriba.</p>
+      <p class="ui-muted">Todavía no hay comunidades.@if (canWrite) { Crea la primera con el botón de arriba.}</p>
     } @else {
       <div class="unit-tree__list">
         @for (tree of trees; track tree.id) {
-          <app-unit-node [node]="tree" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="openRemove($event)" (restore)="restoring.set($event)" />
+          <app-unit-node [node]="tree" [canWrite]="canWrite" [canDelete]="canDelete" (add)="newParent.set($event)" (edit)="editing.set($event)" (remove)="openRemove($event)" (restore)="restoring.set($event)" />
         }
       </div>
     }

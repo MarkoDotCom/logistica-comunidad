@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { type RoleDetail, type RoleSummary, RolesApi } from '../../../../core/roles.api';
+import { Session } from '../../../../core/session';
 import { Button, Dialog, SectionHeader, Tag } from '../../../../shared/ui';
 import { RemoveRole } from '../remove-role/remove-role';
 import { RoleWizard } from '../role-wizard/role-wizard';
@@ -13,7 +14,9 @@ import { RoleWizard } from '../role-wizard/role-wizard';
 })
 export class RoleList {
   private readonly api = inject(RolesApi);
+  private readonly session = inject(Session);
 
+  protected readonly canWrite = this.session.can('roles.write');
   protected readonly roles = signal<RoleSummary[] | null>(null);
   protected readonly failed = signal(false);
   protected readonly newOpen = signal(false);

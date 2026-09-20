@@ -1,4 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { Session } from '../../../../core/session';
 import { UsersApi, type UserSummary } from '../../../../core/users.api';
 import { Button, Dialog, SectionHeader, Tag } from '../../../../shared/ui';
 import { EditUser } from '../edit-user/edit-user';
@@ -12,7 +13,9 @@ import { NewUser } from '../new-user/new-user';
 })
 export class UserList {
   private readonly api = inject(UsersApi);
+  private readonly session = inject(Session);
 
+  protected readonly canWrite = this.session.can('users.write');
   protected readonly users = signal<UserSummary[] | null>(null);
   protected readonly failed = signal(false);
   protected readonly query = signal('');

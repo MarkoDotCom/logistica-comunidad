@@ -1,9 +1,11 @@
 <main class="page">
   <ui-section-header heading="Roles" subtitle="Conjuntos de permisos que se asignan a personas. Todavía no se aplican: no hay inicio de sesión." />
 
-  <div class="role-list__toolbar">
-    <ui-button (clicked)="newOpen.set(true)">+ Nuevo rol</ui-button>
-  </div>
+  @if (canWrite) {
+    <div class="role-list__toolbar">
+      <ui-button (clicked)="newOpen.set(true)">+ Nuevo rol</ui-button>
+    </div>
+  }
 
   <ui-dialog [open]="newOpen()" (openChange)="$event || onDialogClose('new')">
     @if (newOpen()) {
@@ -58,9 +60,11 @@
                 <td>{{ role.userCount }}</td>
                 <td class="ui-table__actions">
                   <a class="role-list__open" [routerLink]="['/admin/roles', role.id]">Abrir</a>
-                  <ui-button variant="secondary" (clicked)="openEdit(role)">Modificar</ui-button>
-                  @if (!role.isSystem) {
-                    <ui-button variant="ghost" (clicked)="removing.set(role)">Eliminar</ui-button>
+                  @if (canWrite) {
+                    <ui-button variant="secondary" (clicked)="openEdit(role)">Modificar</ui-button>
+                    @if (!role.isSystem) {
+                      <ui-button variant="ghost" (clicked)="removing.set(role)">Eliminar</ui-button>
+                    }
                   }
                 </td>
               </tr>

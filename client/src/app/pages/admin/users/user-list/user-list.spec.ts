@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import { polyfillDialog } from '../../../../shared/ui/dialog/dialog.testing';
 import { UserList } from './user-list';
 
@@ -17,7 +18,7 @@ describe('UserList', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [UserList],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideSessionWith(ALL_PERMISSIONS), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
   });

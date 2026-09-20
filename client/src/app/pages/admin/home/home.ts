@@ -1,6 +1,7 @@
 import { DecimalPipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Session } from '../../../core/session';
 import { SummaryApi, type Summary } from '../../../core/summary.api';
 import { Card, type CardAction, SectionHeader } from '../../../shared/ui';
 
@@ -20,6 +21,7 @@ interface Metric {
 export class Home {
   private readonly api = inject(SummaryApi);
   private readonly router = inject(Router);
+  protected readonly session = inject(Session);
 
   protected readonly summary = signal<Summary | null>(null);
   protected readonly failed = signal(false);

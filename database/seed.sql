@@ -112,4 +112,8 @@ INSERT INTO auth.user_role (user_id, role_id) VALUES
   ('50000000-0000-4000-8000-000000000008', '70000000-0000-4000-8000-000000000007'),
   ('50000000-0000-4000-8000-000000000009', '70000000-0000-4000-8000-000000000008');
 
+-- Credenciales: todos los usuarios de ejemplo entran con la contraseña "Comunidad2026!" ---
+INSERT INTO auth.credential (user_id, password_hash)
+  SELECT id, 'scrypt$16384$8$1$8aLvc1iPyXN1q30GEnPKVA==$GD5bUzg+SexOxNmk4I0T/omK4yRXlT+279JSlzS5TrWerNvltUHiaJY8ccYraFC+iFyTSibiwsj9vZlVw5S09w==' FROM users.app_user;
+
 COMMIT;

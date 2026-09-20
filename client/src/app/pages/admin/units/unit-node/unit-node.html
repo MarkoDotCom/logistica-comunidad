@@ -17,13 +17,19 @@
     }
     <span class="unit-node__actions">
       @if (node().deletedAt) {
-        <ui-button variant="secondary" (clicked)="restore.emit(node())">Restaurar</ui-button>
+        @if (canDelete()) {
+          <ui-button variant="secondary" (clicked)="restore.emit(node())">Restaurar</ui-button>
+        }
       } @else {
-        @if (node().kind !== 'account') {
+        @if (canWrite() && node().kind !== 'account') {
           <ui-button variant="ghost" (clicked)="add.emit(node())">+ Hijo</ui-button>
         }
-        <ui-button variant="secondary" (clicked)="edit.emit(node())">Modificar</ui-button>
-        <ui-button variant="ghost" (clicked)="remove.emit(node())">Eliminar</ui-button>
+        @if (canWrite()) {
+          <ui-button variant="secondary" (clicked)="edit.emit(node())">Modificar</ui-button>
+        }
+        @if (canDelete()) {
+          <ui-button variant="ghost" (clicked)="remove.emit(node())">Eliminar</ui-button>
+        }
       }
     </span>
   </div>
@@ -33,6 +39,8 @@
       <app-unit-node
         [node]="child"
         [depth]="depth() + 1"
+        [canWrite]="canWrite()"
+        [canDelete]="canDelete()"
         (add)="add.emit($event)"
         (edit)="edit.emit($event)"
         (remove)="remove.emit($event)"

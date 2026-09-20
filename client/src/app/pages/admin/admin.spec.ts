@@ -1,16 +1,20 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideSessionWith } from '../../core/session.testing';
 import { Admin } from './admin';
 
 describe('Admin', () => {
-  it('should render the dashboard sections in the header', async () => {
-    vi.stubGlobal('matchMedia', () => ({ matches: false }));
-    await TestBed.configureTestingModule({ imports: [Admin], providers: [provideRouter([])] }).compileComponents();
+  beforeEach(() => vi.stubGlobal('matchMedia', () => ({ matches: false })));
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('should render only the sections the person can see, with their name and Salir', async () => {
+    await TestBed.configureTestingModule({ imports: [Admin], providers: [provideRouter([]), provideSessionWith(['units.read', 'users.read'], { fullName: 'Lucía Vera' })] }).compileComponents();
     const fixture = TestBed.createComponent(Admin);
     await fixture.whenStable();
+    const el = fixture.nativeElement as HTMLElement;
 
-    const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.admin__nav a')].map((a) => a.textContent?.trim());
-    expect(links).toEqual(['Inicio', 'Comunidades', 'Árbol', 'Usuarios', 'Roles']);
-    vi.unstubAllGlobals();
+    expect([...el.querySelectorAll('.admin__nav a')].map((a) => a.textContent?.trim())).toEqual(['Comunidades', 'Árbol', 'Usuarios']);
+    expect(el.querySelector('.admin__user')?.textContent).toBe('Lucía Vera');
+    expect(el.querySelector('ui-button button')?.textContent?.trim()).toBe('Salir');
   });
 });

@@ -1,6 +1,8 @@
 # Client — logistica-comunidad
 
-Angular 21 (standalone, signals, zoneless) con SCSS propio, sin librería de componentes. Dashboard del administrador en `/admin`.
+Angular 21 (standalone, signals, zoneless) con SCSS propio, sin librería de componentes. Dashboard del administrador en `/admin`, con inicio de sesión en `/login` (usuarios del seed: contraseña `Comunidad2026!`).
+
+La sesión vive en memoria: el access token nunca se guarda en el navegador y se recupera al recargar con la cookie httpOnly del refresh token. Cada sección exige un permiso (`core/sections.ts`) y las acciones se ocultan según los permisos de la persona.
 
 ```bash
 npm install
@@ -15,9 +17,11 @@ La URL de la API está en `src/environments/environment.ts` (`http://localhost:3
 
 ```
 src/app/
-├── core/          # HTTP: interceptor que desenvuelve `data`, users.api, units.api, contracts.api, roles.api, summary.api, labels (español)
+├── core/          # sesión (Session, auth.api, interceptor con refresh, guards, sections), interceptor del envoltorio,
+│                # users.api, units.api, contracts.api, roles.api, summary.api, labels (español)
 ├── shared/ui/     # componentes base ui-* (button, card, dialog, stepper, tag, section-header, theme-toggle)
-└── pages/admin/      # layout Admin + páginas
+├── pages/login/      # inicio de sesión (público)
+└── pages/admin/      # layout Admin (menú por permisos, persona y Salir) + páginas
     ├── home/         # métricas (GET /summary) y accesos
     ├── communities/  # /admin/comunidades (lista), /:id (edificios), /:id/edificios/:id (departamentos)
     ├── apartments/   # /admin/departamentos/:id: detalle completo (ruta, ocupantes, cuentas, contratos)

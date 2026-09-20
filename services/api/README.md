@@ -19,6 +19,7 @@ src/
 │   └── prisma/schema.prisma   # se regenera desde la base con `npx prisma db pull`
 └── rest/                # endpoints HTTP; inyecta las tablas, nunca Prisma
     ├── api-response.*   # envoltorio único de respuestas (éxito y error)
+    ├── auth/            # login, refresh, logout, me; guards globales JwtAuthGuard y PermissionGuard
     ├── contracts/
     ├── health/
     ├── roles/
@@ -28,6 +29,27 @@ src/
 ```
 
 `rest → database`, nunca al revés.
+
+## Identidad y permisos
+
+Todos los endpoints exigen `Authorization: Bearer <access token>` salvo `/health` y `/auth/*`. El access token dura `JWT_ACCESS_TTL` (15 min) y se firma con `JWT_SECRET`; el refresh token (`REFRESH_TTL_DAYS`, 30 días) viaja solo en una cookie `httpOnly` con `Path=/auth` y rota en cada uso. Variables en el `.env` de la raíz.
+
+| Método | Ruta            | Descripción |
+|--------|-----------------|-------------|
+| POST   | `/auth/login`   | `email` + `password` → `{ accessToken, user }` y cookie `refresh_token`. Todos los usuarios del seed: `Comunidad2026!` |
+| POST   | `/auth/refresh` | Con la cookie: access token nuevo y cookie rotada; el refresh usado queda revocado |
+| POST   | `/auth/logout`  | Revoca el refresh token de la cookie y la borra (204) |
+| GET    | `/auth/me`      | La cuenta de la sesión con roles y `permissions` |
+
+Cada endpoint declara el permiso que exige con `@RequirePermission('units.write')`; sin token 401, sin el permiso 403 con el permiso que falta en `message`. Los permisos se leen de la base en cada petición, así un cambio de rol surte efecto de inmediato. Las contraseñas se guardan con scrypt (`src/database/password.ts`).
+
+| Recurso | `read` | `write` | `delete` |
+|---|---|---|---|
+| `summary` | `GET /summary` | | |
+| `units` | `GET /units*` | `POST /units`, `PATCH /units/:id` | `DELETE /units/:id`, `POST /units/:id/restore` |
+| `contracts` | `GET /contracts/:id` | `POST /units/:id/contracts`, `PATCH /contracts/:id` | |
+| `users` | `GET /users*` | `POST /users`, `PATCH /users/:id` | |
+| `roles` | `GET /permissions`, `GET /roles*` | `POST/PATCH/DELETE /roles*`, `PUT/DELETE /roles/:id/users/:userId` | |
 
 ## Respuestas
 
@@ -74,4 +96,4 @@ Borrado lógico de unidades: nunca se borra físicamente. Una unidad eliminada d
 
 Contratos: el tipo debe corresponder al tipo de unidad (comunidad: administración y empleo; edificio: empleo; departamento: propiedad y arriendo; cuenta: ninguno), la persona debe existir y el término no puede ser anterior al inicio. No hay borrado de contratos.
 
-Roles: globales, nombre único entre vivos (409), permisos del catálogo (400 si alguno no existe). Los roles del sistema (`isSystem`, `admin`) cambian de permisos y descripción pero no se renombran ni eliminan. Los permisos se gestionan pero todavía no se aplican: no hay autenticación.
+Roles: globales, nombre único entre vivos (409), permisos del catálogo (400 si alguno no existe). Los roles del sistema (`isSystem`, `admin`) cambian de permisos y descripción pero no se renombran ni eliminan. Los permisos se aplican en cada endpoint (ver Identidad y permisos).

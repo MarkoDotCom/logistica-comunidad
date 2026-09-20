@@ -24,7 +24,9 @@
     <section class="detail__section">
       <div class="detail__heading">
         <h3 class="detail__title">Permisos</h3>
-        <ui-button variant="secondary" (clicked)="editOpen.set(true)">Modificar rol</ui-button>
+        @if (canWrite) {
+          <ui-button variant="secondary" (clicked)="editOpen.set(true)">Modificar rol</ui-button>
+        }
       </div>
       @if (role.permissions.length === 0) {
         <p class="ui-muted">Este rol no tiene permisos: solo agrupa personas.</p>
@@ -40,7 +42,9 @@
     <section class="detail__section">
       <div class="detail__heading">
         <h3 class="detail__title">Personas con este rol</h3>
-        <ui-button (clicked)="addOpen.set(true)">+ Agregar persona</ui-button>
+        @if (canWrite) {
+          <ui-button (clicked)="addOpen.set(true)">+ Agregar persona</ui-button>
+        }
       </div>
       @if (role.users.length === 0) {
         <p class="ui-muted">Nadie tiene este rol todavía.</p>
@@ -60,7 +64,9 @@
                   <td>{{ user.fullName }}</td>
                   <td>{{ user.email }}</td>
                   <td class="ui-table__actions">
-                    <ui-button variant="ghost" (clicked)="removingUser.set(user)">Quitar</ui-button>
+                    @if (canWrite) {
+                      <ui-button variant="ghost" (clicked)="removingUser.set(user)">Quitar</ui-button>
+                    }
                   </td>
                 </tr>
               }

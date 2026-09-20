@@ -1,12 +1,13 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import { provideRouter } from '@angular/router';
 import { CommunityList } from './community-list';
 
 describe('CommunityList', () => {
   it('should list the root communities linking to their page', async () => {
-    await TestBed.configureTestingModule({ imports: [CommunityList], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [CommunityList], providers: [provideSessionWith(ALL_PERMISSIONS), provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
     const http = TestBed.inject(HttpTestingController);
     const fixture = TestBed.createComponent(CommunityList);
     await fixture.whenStable();

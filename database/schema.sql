@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Gestión logística de comunidad de vivienda — esquema PostgreSQL 13+
--- Esquemas: units (árbol de unidades), users (cuentas y contratos), auth (roles y permisos) y public (enums y funciones compartidas)
+-- Esquemas: units (árbol de unidades), users (cuentas y contratos), auth (credenciales, sesiones, roles y permisos) y public (enums y funciones compartidas)
 -- Ejecutar: psql -d <db> -f schema.sql
 -- =============================================================================
 
@@ -8,7 +8,7 @@ CREATE EXTENSION IF NOT EXISTS citext;
 
 CREATE SCHEMA units;   -- comunidad, edificios, departamentos, cuentas
 CREATE SCHEMA users;   -- cuentas de usuario y sus contratos con las unidades
-CREATE SCHEMA auth;    -- roles, permisos y su asignación a usuarios
+CREATE SCHEMA auth;    -- credenciales, sesiones, roles y permisos
 
 -- -----------------------------------------------------------------------------
 -- Tipos enumerados
@@ -189,3 +189,29 @@ INSERT INTO auth.role (id, name, description, is_system) VALUES
   ('70000000-0000-4000-8000-000000000001', 'admin', 'Acceso completo a la aplicación', true);
 INSERT INTO auth.role_permission (role_id, permission_key)
   SELECT '70000000-0000-4000-8000-000000000001', key FROM auth.permission;
+
+-- =============================================================================
+-- 4. Identidad: credenciales y sesiones
+-- =============================================================================
+
+-- Contraseña separada de la cuenta: una cuenta puede existir sin credencial (todavía no puede entrar).
+CREATE TABLE auth.credential (
+  user_id       uuid PRIMARY KEY REFERENCES users.app_user(id) ON DELETE CASCADE,
+  password_hash text NOT NULL,                  -- scrypt$N$r$p$salt$hash (ver services/api/src/database/password.ts)
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  updated_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER credential_updated_at BEFORE UPDATE ON auth.credential
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Refresh tokens: se guarda solo el hash del token; cada uso lo revoca y emite otro (rotación).
+CREATE TABLE auth.refresh_token (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL REFERENCES users.app_user(id) ON DELETE CASCADE,
+  token_hash text NOT NULL UNIQUE,
+  expires_at timestamptz NOT NULL,
+  revoked_at timestamptz,                       -- NULL = utilizable hasta expires_at
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX refresh_token_user_idx ON auth.refresh_token (user_id) WHERE revoked_at IS NULL;

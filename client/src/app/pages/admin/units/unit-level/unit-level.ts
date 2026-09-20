@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, input, type OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { apiErrorMessage, CHILD_KIND, NEW_UNIT_LABELS, UNIT_KIND_LABELS, UNIT_KIND_PLURALS, unitLabel } from '../../../../core/labels';
+import { Session } from '../../../../core/session';
 import { UnitsApi, type Unit, type UnitKind, type UnitNode, type UnitSummary } from '../../../../core/units.api';
 import { Button, Dialog, Tag } from '../../../../shared/ui';
 import { EditUnit } from '../edit-unit/edit-unit';
@@ -19,6 +20,7 @@ import { RestoreUnit } from '../restore-unit/restore-unit';
 })
 export class UnitLevel implements OnInit {
   private readonly api = inject(UnitsApi);
+  private readonly session = inject(Session);
 
   readonly parent = input.required<Unit | null>();
   /** Tipo que se crea con el botón de alta y que da nombre a la columna de hijos. */
@@ -36,6 +38,8 @@ export class UnitLevel implements OnInit {
   protected readonly restoring = signal<UnitNode | null>(null);
   protected readonly actionError = signal<string | null>(null);
 
+  protected readonly canWrite = this.session.can('units.write');
+  protected readonly canDelete = this.session.can('units.delete');
   protected readonly kindLabels = UNIT_KIND_LABELS;
   protected readonly plurals = UNIT_KIND_PLURALS;
   protected readonly unitLabel = unitLabel;

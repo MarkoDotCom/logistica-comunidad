@@ -40,6 +40,9 @@ services:
       HOME: /tmp
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       API_PORT: 3000
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      REFRESH_TTL_DAYS: ${REFRESH_TTL_DAYS:-30}
     ports:
       - "${API_PORT:-3001}:3000"
     volumes:

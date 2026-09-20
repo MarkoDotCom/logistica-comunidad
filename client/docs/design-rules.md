@@ -14,9 +14,16 @@ La guía general está en la raíz del repo: [`docs/design-rules.md`](../../docs
 
 No hay página `/ux`; el punto 6 del checklist de la guía general no aplica.
 
+## Sesión y permisos
+
+- `Session` (`core/session.ts`) guarda la cuenta y el access token en memoria (signals). `restore()` recupera la sesión con la cookie de refresh; `authInterceptor` añade el Bearer y, ante un 401, refresca una vez y repite. `sessionGuard` protege `/admin`; `permissionGuard('x.y')` cada sección (`core/sections.ts`).
+- Las acciones se **ocultan** sin permiso (`session.can('units.write')`): no se muestran deshabilitadas. Lectura: `units.read`, `users.read`, `roles.read`, `summary.read`; escritura: `units.write`, `units.delete`, `contracts.write`, `users.write`, `roles.write`.
+- Los specs de páginas usan `provideSessionWith(permissions)` de `core/session.testing.ts`.
+- `/login` es la única página pública: header mínimo con marca y `ui-theme-toggle`, y un `ui-card` con el formulario.
+
 ## Patrones de página
 
-- **Dashboard**: todo bajo `pages/admin/`, con el layout `Admin` (Inicio · Comunidades · Árbol · Usuarios · Roles y `ui-theme-toggle`). Cada página empieza con `<main class="page">` y un `ui-section-header`; las de detalle llevan antes un `ui-breadcrumb` y sus secciones usan `pages/admin/detail.scss` (3rem entre secciones).
+- **Dashboard**: todo bajo `pages/admin/`, con el layout `Admin` (las secciones permitidas de Inicio · Comunidades · Árbol · Usuarios · Roles, la persona, Salir y `ui-theme-toggle`). Cada página empieza con `<main class="page">` y un `ui-section-header`; las de detalle llevan antes un `ui-breadcrumb` y sus secciones usan `pages/admin/detail.scss` (3rem entre secciones).
 - **Navegación por niveles**: Comunidades → comunidad (edificios) → edificio (departamentos) → departamento (detalle). Cada nivel es un `app-unit-level` (tabla con alta, edición, eliminación lógica y restauración) parametrizado con el padre, el tipo hijo y la ruta de cada fila. Mover unidades solo se ofrece en el Árbol.
 - **Orden de la jerarquía** (comunidad > edificio > departamento > cuenta, con saltos permitidos): los wizards solo ofrecen tipos válidos (`allowedChildKinds`, `allowedKinds` en `core/labels.ts`), el Árbol solo ofrece como destino unidades de rango superior y las cuentas no muestran "+ Hijo". La API y la base aplican la misma regla; su mensaje se muestra tal cual si algo se escapa.
 - **Etiquetas**: enums de la API traducidos con `core/labels.ts` (`UNIT_KIND_LABELS`, `CONTRACT_TYPE_LABELS`, `CONTRACT_STATUS_LABELS`). `unitLabel()` da "Torre A" si hay nombre o "Departamento 101" si no.

@@ -4,20 +4,23 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module.js';
+import { loginAs, type Session } from './session.helper.js';
 
 describe('Resumen (e2e)', () => {
   let app: INestApplication<App>;
+  let session: Session;
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication();
     await app.init();
+    session = await loginAs(app);
   });
 
   afterAll(() => app.close());
 
   it('GET /summary counts units by kind, users and current contracts', async () => {
-    const res = await request(app.getHttpServer()).get('/summary').expect(200);
+    const res = await request(app.getHttpServer()).get('/summary').set(session.auth).expect(200);
     const { units, users, contracts } = res.body.data;
     expect(units.community).toBeGreaterThanOrEqual(1);
     expect(units.apartment).toBeGreaterThanOrEqual(4);

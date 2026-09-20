@@ -1,0 +1,31 @@
+<header class="login__header">
+  <span class="login__brand">Logística Comunidad</span>
+  <ui-theme-toggle />
+</header>
+
+<main class="login">
+  <ui-card heading="Iniciar sesión" class="login__card">
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <label class="ui-field">
+        <span class="ui-field__label">Email</span>
+        <input class="ui-input" type="email" formControlName="email" autocomplete="username" />
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <span class="ui-form__error">Escribe un email válido.</span>
+        }
+      </label>
+      <label class="ui-field">
+        <span class="ui-field__label">Contraseña</span>
+        <input class="ui-input" type="password" formControlName="password" autocomplete="current-password" />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <span class="ui-form__error">Escribe tu contraseña.</span>
+        }
+      </label>
+      @if (error(); as error) {
+        <p class="ui-form__error">{{ error }}</p>
+      }
+      <div class="ui-form__actions login__actions">
+        <ui-button type="submit" [disabled]="saving()">{{ saving() ? 'Entrando…' : 'Entrar' }}</ui-button>
+      </div>
+    </form>
+  </ui-card>
+</main>

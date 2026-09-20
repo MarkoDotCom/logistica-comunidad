@@ -129,6 +129,24 @@ export class AppUserTable {
     return { total, active };
   }
 
+  /** Permisos efectivos: la unión de los permisos de sus roles vivos. */
+  async permissionsOf(id: string): Promise<string[]> {
+    const rows = await this.prisma.role_permission.findMany({
+      where: { role: { deleted_at: null, users: { some: { user_id: id } } } },
+      select: { permission_key: true },
+      distinct: ['permission_key'],
+      orderBy: { permission_key: 'asc' },
+    });
+    return rows.map((r) => r.permission_key);
+  }
+
+  /** La cuenta tal como la ve la sesión: datos, roles y permisos. */
+  async findAccount(id: string): Promise<(AppUserDto & { permissions: string[] }) | null> {
+    const row = await this.prisma.app_user.findUnique({ where: { id }, include: ROLES });
+    if (!row) return null;
+    return { ...toUser(row), permissions: await this.permissionsOf(id) };
+  }
+
   async exists(id: string): Promise<boolean> {
     return (await this.prisma.app_user.count({ where: { id } })) > 0;
   }

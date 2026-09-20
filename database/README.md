@@ -40,7 +40,7 @@ psql -d comunidad -f seed.sql
 |----------|-----------|
 | `units`  | `unit` |
 | `users`  | `app_user`, `contract` |
-| `auth`   | `permission`, `role`, `role_permission`, `user_role` |
+| `auth`   | `credential`, `refresh_token`, `permission`, `role`, `role_permission`, `user_role` |
 | `public` | Enums `unit_kind`, `contract_type` y las funciones `set_updated_at()` y `unit_rank()` |
 
 En Prisma el datasource declara `schemas = ["auth", "public", "units", "users"]` y cada modelo lleva `@@schema(...)`.
@@ -114,6 +114,15 @@ Roles del seed y sus permisos de partida (se ajustan desde el admin):
 | `visita` | Ninguno |
 | `read-only` | Todos los `.read` |
 
+### Identidad
+
+| Tabla           | Descripción |
+|-----------------|-------------|
+| `credential`    | Hash de contraseña (scrypt) por cuenta. Sin fila, la cuenta no puede entrar. |
+| `refresh_token` | Sesiones: hash del refresh token, expiración y revocación. Cada uso lo revoca y emite otro. |
+
+Todos los usuarios del seed entran con la contraseña `Comunidad2026!`.
+
 ## Reglas
 
 - **Raíz**: `kind = 'community'` ⇔ `parent_id IS NULL` (constraint `unit_root_is_community`). Todo lo demás tiene padre.
@@ -122,7 +131,7 @@ Roles del seed y sus permisos de partida (se ajustan desde el admin):
 - **Alcance del contrato**: aplica a la unidad y a todo su subárbol (administración de la comunidad ve todo; dueño de un departamento ve su cuenta). La base no restringe qué tipo de contrato va en qué tipo de unidad; lo decide la aplicación.
 - **Vigencia**: un contrato está vigente si `starts_at <= hoy` y (`ends_at IS NULL` o `ends_at >= hoy`). La base no impide solapamientos entre contratos de la misma persona y unidad; lo controla la aplicación.
 - **Borrado lógico**: la API nunca borra unidades físicamente. `DELETE /units/:id` pone `deleted_at` en la unidad y en todo su subárbol (mismo instante); restaurar revierte las que se eliminaron juntas. Las eliminadas quedan fuera de listas, árbol y métricas, y liberan su `code` (los índices únicos son parciales sobre `deleted_at IS NULL`). Sus contratos no se tocan.
-- **Roles**: `DELETE /roles/:id` es lógico (`deleted_at`) y se rechaza en roles del sistema. Los permisos de un rol se reemplazan completos en cada modificación. Por ahora los permisos se gestionan pero no se aplican: no hay autenticación.
+- **Roles**: `DELETE /roles/:id` es lógico (`deleted_at`) y se rechaza en roles del sistema. Los permisos de un rol se reemplazan completos en cada modificación. La API exige un JWT en cada endpoint (salvo `/health` y `/auth/*`) y el permiso del catálogo que corresponda.
 - **Borrado físico**: solo con SQL directo. `ON DELETE CASCADE` desde el padre y desde `app_user`.
 
 ## Convenciones

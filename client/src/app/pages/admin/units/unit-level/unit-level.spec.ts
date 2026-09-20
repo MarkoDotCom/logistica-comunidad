@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import { provideRouter } from '@angular/router';
 import type { Unit } from '../../../../core/units.api';
 import { polyfillDialog } from '../../../../shared/ui/dialog/dialog.testing';
@@ -18,7 +19,7 @@ describe('UnitLevel', () => {
   beforeAll(polyfillDialog);
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [UnitLevel], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [UnitLevel], providers: [provideSessionWith(ALL_PERMISSIONS), provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
     http = TestBed.inject(HttpTestingController);
   });
 
@@ -92,5 +93,17 @@ describe('UnitLevel', () => {
     http.expectOne((r) => r.urlWithParams.endsWith('/units/a/tree')).flush({ ...BUILDINGS[0], children: [] });
     await fixture.whenStable();
     expect(el.querySelector('app-remove-unit')?.textContent).toContain('Vas a eliminar Torre A');
+  });
+
+  it('should hide every action for a person who can only read', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({ imports: [UnitLevel], providers: [provideSessionWith(['units.read']), provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    http = TestBed.inject(HttpTestingController);
+    const fixture = await render();
+    const el = fixture.nativeElement as HTMLElement;
+
+    expect(el.querySelector('.unit-level__toolbar')).toBeNull();
+    expect(el.querySelectorAll('tbody .ui-table__actions button')).toHaveLength(0);
+    expect(el.querySelector('tbody .unit-level__open')).not.toBeNull(); // Abrir sigue disponible
   });
 });

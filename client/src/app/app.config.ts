@@ -5,6 +5,7 @@ import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { apiEnvelopeInterceptor } from './core/api-envelope.interceptor';
+import { authInterceptor } from './core/auth.interceptor';
 import { routes } from './app.routes';
 
 registerLocaleData(localeEs);
@@ -13,7 +14,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes, withComponentInputBinding()),
-    provideHttpClient(withInterceptors([apiEnvelopeInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor, apiEnvelopeInterceptor])),
     { provide: LOCALE_ID, useValue: 'es' },
   ],
 };

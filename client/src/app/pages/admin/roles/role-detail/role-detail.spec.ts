@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import { provideRouter } from '@angular/router';
 import { polyfillDialog } from '../../../../shared/ui/dialog/dialog.testing';
 import { RoleDetail } from './role-detail';
@@ -17,7 +18,7 @@ describe('RoleDetail', () => {
   beforeAll(polyfillDialog);
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [RoleDetail], providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [RoleDetail], providers: [provideSessionWith(ALL_PERMISSIONS), provideRouter([]), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
     http = TestBed.inject(HttpTestingController);
   });
 

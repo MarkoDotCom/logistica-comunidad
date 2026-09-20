@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ALL_PERMISSIONS, provideSessionWith } from '../../../../core/session.testing';
 import type { Contract } from '../../../../core/contracts.api';
 import type { Unit } from '../../../../core/units.api';
 import { polyfillDialog } from '../../../../shared/ui/dialog/dialog.testing';
@@ -16,7 +17,7 @@ describe('UnitContracts', () => {
   beforeAll(polyfillDialog);
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [UnitContracts], providers: [provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [UnitContracts], providers: [provideSessionWith(ALL_PERMISSIONS), provideHttpClient(), provideHttpClientTesting()] }).compileComponents();
   });
 
   async function render(unit: Unit, contracts: Contract[]) {
